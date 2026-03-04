@@ -1,0 +1,2533 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 — Painel de Crescimento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #07090f;
+    --bg2: #0c1018;
+    --card: #101520;
+    --card2: #141b27;
+    --border: #1c2638;
+    --border2: #243044;
+    --amber: #e8a020;
+    --amber-dim: #a06a10;
+    --teal: #1a9e8f;
+    --teal-dim: #0e6960;
+    --red: #c0392b;
+    --text: #d0d8e8;
+    --dim: #6b7a94;
+    --dim2: #3d4d63;
+    --font-head: 'Syne', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 13px; line-height: 1.6; }
+  ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: var(--bg2); } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* ── LAYOUT ── */
+  .shell { display: grid; grid-template-rows: auto 1fr auto; min-height: 100vh; }
+  .header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .header-left { display: flex; align-items: baseline; gap: 12px; }
+  .header-title { font-family: var(--font-head); font-size: 18px; font-weight: 800; letter-spacing: -0.5px; color: #fff; }
+  .header-sub { font-size: 11px; color: var(--dim); letter-spacing: 0.05em; }
+  .header-date { font-size: 11px; color: var(--amber); font-weight: 500; }
+  .main { overflow-y: auto; }
+  .content { display: none; padding: 20px; max-width: 840px; margin: 0 auto; animation: fadeIn 0.2s ease; }
+  .content.active { display: block; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(4px); } to { opacity:1; transform: translateY(0); } }
+
+  /* ── NAV ── */
+  .nav { background: var(--bg2); border-top: 1px solid var(--border); display: flex; justify-content: space-around; }
+  .nav-btn { flex: 1; padding: 10px 4px 8px; background: none; border: none; color: var(--dim); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; transition: color 0.2s; border-top: 2px solid transparent; }
+  .nav-btn .icon { font-size: 16px; }
+  .nav-btn:hover { color: var(--text); }
+  .nav-btn.active { color: var(--amber); border-top-color: var(--amber); }
+
+  /* ── CARDS ── */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 14px; overflow: hidden; }
+  .card-header { padding: 10px 14px; background: var(--card2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .card-label { font-size: 9px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--amber); }
+  .card-body { padding: 14px; }
+  .card-body p { color: var(--text); line-height: 1.7; }
+
+  /* ── SECTION TITLE ── */
+  .section-title { font-family: var(--font-head); font-size: 22px; font-weight: 700; margin-bottom: 4px; color: #fff; }
+  .section-sub { font-size: 11px; color: var(--dim); margin-bottom: 18px; }
+
+  /* ── BUTTONS ── */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 4px; border: none; cursor: pointer; font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.04em; transition: all 0.15s; }
+  .btn-primary { background: var(--amber); color: #000; }
+  .btn-primary:hover { background: #f0b030; }
+  .btn-primary:disabled { background: var(--amber-dim); color: #555; cursor: not-allowed; }
+  .btn-ghost { background: var(--card2); color: var(--text); border: 1px solid var(--border2); }
+  .btn-ghost:hover { background: var(--border); }
+  .btn-teal { background: var(--teal); color: #fff; }
+  .btn-teal:hover { background: #1db5a3; }
+  .btn-danger { background: transparent; color: var(--red); border: 1px solid var(--red); }
+  .btn-danger:hover { background: rgba(192,57,43,0.1); }
+  .btn-sm { padding: 5px 10px; font-size: 10px; }
+  .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+  /* ── FORM ── */
+  .form-group { margin-bottom: 12px; }
+  .form-label { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin-bottom: 5px; }
+  .form-input, .form-textarea, .form-select {
+    width: 100%; background: var(--bg2); border: 1px solid var(--border2); border-radius: 4px;
+    color: var(--text); font-family: var(--font-mono); font-size: 12px; padding: 9px 12px;
+    outline: none; transition: border-color 0.15s; resize: vertical;
+  }
+  .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: var(--amber); }
+  .form-textarea { min-height: 80px; }
+  .form-select option { background: var(--bg2); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media(max-width:480px) { .form-row { grid-template-columns: 1fr; } }
+
+  /* ── BRIEFING ── */
+  .briefing-meta { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 2px; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500; }
+  .tag-amber { background: rgba(232,160,32,0.15); color: var(--amber); border: 1px solid rgba(232,160,32,0.3); }
+  .tag-teal { background: rgba(26,158,143,0.15); color: var(--teal); border: 1px solid rgba(26,158,143,0.3); }
+  .tag-dim { background: var(--card2); color: var(--dim); border: 1px solid var(--border2); }
+  .briefing-section { border-left: 2px solid var(--border2); padding: 10px 14px; margin-bottom: 12px; }
+  .briefing-section.foco { border-color: var(--amber); }
+  .briefing-section.reflexao { border-color: var(--teal); }
+  .briefing-section.alerta { border-color: #c0392b; }
+  .briefing-section.decisao { border-color: var(--dim2); }
+  .briefing-section-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 5px; }
+  .briefing-section.foco .briefing-section-label { color: var(--amber); }
+  .briefing-section.reflexao .briefing-section-label { color: var(--teal); }
+  .briefing-section.alerta .briefing-section-label { color: #c0392b; }
+  .briefing-section.decisao .briefing-section-label { color: var(--dim); }
+  .briefing-section-text { font-size: 13px; color: var(--text); line-height: 1.7; }
+  .loading-line { height: 14px; background: linear-gradient(90deg, var(--border) 0%, var(--border2) 50%, var(--border) 100%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 2px; margin-bottom: 8px; }
+  @keyframes shimmer { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+  .loading-line:nth-child(2) { width: 70%; }
+  .loading-line:nth-child(3) { width: 85%; }
+
+
+  /* ── PASSWORD LOCK ── */
+  .lock-screen { position: fixed; inset: 0; background: var(--bg); z-index: 999; display: flex; align-items: center; justify-content: center; }
+  .lock-screen.hidden { display: none; }
+  .lock-box { width: min(320px, calc(100vw - 32px)); padding: 36px 32px; background: var(--card); border: 1px solid var(--border2); border-radius: 8px; text-align: center; }
+  .lock-logo { font-family: var(--font-head); font-size: 32px; font-weight: 800; color: #fff; letter-spacing: -1px; margin-bottom: 4px; }
+  .lock-sub { font-size: 11px; color: var(--dim); margin-bottom: 28px; letter-spacing: 0.05em; }
+  .lock-input { width: 100%; background: var(--bg2); border: 1px solid var(--border2); border-radius: 4px; color: var(--text); font-family: var(--font-mono); font-size: 16px; padding: 12px 16px; outline: none; text-align: center; letter-spacing: 0.15em; transition: border-color 0.15s; margin-bottom: 12px; }
+  .lock-input:focus { border-color: var(--amber); }
+  .lock-input.shake { animation: shake 0.35s ease; border-color: var(--red); }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 20%,60%{transform:translateX(-8px);} 40%,80%{transform:translateX(8px);} }
+  .lock-btn { width: 100%; padding: 12px; background: var(--amber); color: #000; border: none; border-radius: 4px; font-family: var(--font-mono); font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .lock-btn:hover { background: #f0b030; }
+  .lock-error { font-size: 11px; color: var(--red); margin-top: 8px; min-height: 16px; }
+  .lock-hint { font-size: 10px; color: var(--dim2); margin-top: 20px; line-height: 1.6; }
+  .lock-change { font-size: 10px; color: var(--dim2); margin-top: 10px; cursor: pointer; text-decoration: underline; }
+  .lock-change:hover { color: var(--dim); }
+
+
+
+  /* -- MEDIA TOOLBAR -- */
+  .media-toolbar { display: flex; gap: 6px; padding: 8px 14px 0; background: var(--card2); flex-wrap: wrap; }
+  .media-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 3px; border: 1px solid var(--border2); background: var(--bg2); color: var(--dim); font-family: var(--font-mono); font-size: 10px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .media-btn:hover { border-color: var(--amber); color: var(--text); }
+  .media-btn.active { border-color: var(--teal); color: var(--teal); background: rgba(26,158,143,0.08); }
+  .media-preview { padding: 8px 14px; background: var(--card2); border-top: 1px solid var(--border); display: none; flex-wrap: wrap; gap: 8px; }
+  .media-preview.visible { display: flex; }
+  .media-thumb { position: relative; display: inline-block; }
+  .media-thumb img { width: 64px; height: 64px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border2); display: block; }
+  .media-thumb-label { font-size: 9px; color: var(--dim2); margin-top: 2px; text-align: center; max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .media-thumb-remove { position: absolute; top: -4px; right: -4px; width: 16px; height: 16px; background: var(--red); color: #fff; border-radius: 50%; border: none; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
+  .media-file-thumb { width: 64px; height: 64px; border-radius: 4px; border: 1px solid var(--border2); background: var(--card); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+  .media-file-thumb .mf-icon { font-size: 22px; }
+  .media-file-thumb .mf-ext { font-size: 9px; color: var(--dim2); }
+  /* Google Drive */
+  .gdrive-files { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; max-height: 200px; overflow-y: auto; }
+  .gdrive-file { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--bg2); border: 1px solid var(--border); border-radius: 3px; cursor: pointer; transition: border-color 0.15s; }
+  .gdrive-file:hover { border-color: var(--amber); }
+  .gdrive-file.selected { border-color: var(--teal); background: rgba(26,158,143,0.06); }
+  .gdrive-file-icon { font-size: 16px; flex-shrink: 0; }
+  .gdrive-file-name { font-size: 11px; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gdrive-file-size { font-size: 10px; color: var(--dim2); flex-shrink: 0; }
+
+  /* --- PROJECTS --- */
+  .drop-zone { border: 2px dashed var(--border2); border-radius: 6px; padding: 28px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--bg2); }
+  .drop-zone:hover, .drop-zone.dragover { border-color: var(--amber); background: rgba(232,160,32,0.05); }
+  .drop-zone-icon { font-size: 28px; margin-bottom: 8px; }
+  .drop-zone-label { font-size: 12px; color: var(--dim); }
+  .drop-zone-sub { font-size: 10px; color: var(--dim2); margin-top: 4px; }
+  .file-list { margin: 10px 0; display: flex; flex-direction: column; gap: 4px; }
+  .file-item { display: flex; align-items: center; justify-content: space-between; background: var(--card2); border: 1px solid var(--border); border-radius: 3px; padding: 6px 10px; font-size: 11px; }
+  .file-item-name { color: var(--text); }
+  .file-item-size { color: var(--dim2); font-size: 10px; }
+  .file-item-remove { color: var(--dim2); cursor: pointer; background: none; border: none; font-size: 14px; line-height: 1; padding: 0 2px; }
+  .file-item-remove:hover { color: var(--red); }
+  .proj-card { background: var(--card2); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; overflow: hidden; }
+  .proj-card-header { padding: 12px 14px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .proj-card-name { font-family: var(--font-head); font-weight: 700; font-size: 15px; color: #fff; }
+  .proj-card-date { font-size: 10px; color: var(--dim2); margin-top: 2px; }
+  .proj-card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .proj-card-body { border-top: 1px solid var(--border); padding: 12px 14px; font-size: 12px; line-height: 1.8; color: var(--text); }
+  .proj-card-body strong { color: #fff; }
+  .proj-progress { width: 100%; height: 3px; background: var(--border); border-radius: 2px; margin: 16px 0 8px; overflow: hidden; }
+  .proj-progress-bar { height: 100%; background: var(--amber); border-radius: 2px; transition: width 0.4s ease; }
+  .proj-progress-label { font-size: 10px; color: var(--dim); margin-bottom: 12px; }
+  .proj-context-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 2px; font-size: 9px; background: rgba(26,158,143,0.15); color: var(--teal); border: 1px solid rgba(26,158,143,0.3); cursor: pointer; }
+  .proj-context-badge.inactive { background: var(--card2); color: var(--dim); border-color: var(--border2); }
+
+  /* ── CHAT ── */
+  .chat-area { margin-top: 16px; display: none; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .chat-area.visible { display: block; }
+  .chat-header { background: var(--card2); border-bottom: 1px solid var(--border); padding: 8px 14px; display: flex; align-items: center; justify-content: space-between; }
+  .chat-header-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--teal); }
+  .chat-messages { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; background: var(--bg2); max-height: 55vh; overflow-y: auto; scroll-behavior: smooth; }
+  .chat-msg { display: flex; flex-direction: column; gap: 3px; max-width: 88%; }
+  .chat-msg.user { align-self: flex-end; }
+  .chat-msg.gemini { align-self: flex-start; }
+  .chat-bubble { padding: 9px 13px; border-radius: 6px; font-size: 12px; line-height: 1.7; user-select: text; -webkit-user-select: text; cursor: text; }
+  .chat-msg.user .chat-bubble { background: var(--amber); color: #000; border-radius: 6px 6px 2px 6px; font-weight: 500; }
+  .chat-msg.gemini .chat-bubble { background: var(--card); border: 1px solid var(--border2); color: var(--text); border-radius: 2px 6px 6px 6px; }
+  .chat-msg-time { font-size: 9px; color: var(--dim2); }
+
+  .chat-msg-actions { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+  .chat-speak-btn { background: none; border: none; color: var(--dim2); cursor: pointer; font-size: 13px; padding: 2px 4px; border-radius: 3px; transition: color 0.15s; line-height: 1; }
+  .chat-speak-btn:hover { color: var(--amber); }
+  .chat-speak-btn.speaking { color: var(--teal); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .chat-msg.user .chat-msg-time { text-align: right; }
+  .chat-input-row { display: flex; gap: 8px; padding: 10px 14px; background: var(--card2); border-top: 1px solid var(--border); }
+  .chat-input { flex: 1; background: var(--bg2); border: 1px solid var(--border2); border-radius: 4px; color: var(--text); font-family: var(--font-mono); font-size: 12px; padding: 8px 12px; outline: none; resize: none; min-height: 38px; max-height: 100px; transition: border-color 0.15s; }
+  .chat-input:focus { border-color: var(--teal); }
+  .chat-send-btn { width: 38px; height: 38px; background: var(--teal); border: none; border-radius: 4px; color: #fff; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s; }
+  .chat-send-btn:hover { background: #1db5a3; }
+  .chat-send-btn:disabled { background: var(--teal-dim); cursor: not-allowed; }
+  .chat-thinking { display: flex; gap: 4px; padding: 10px 14px; align-items: center; }
+  .chat-thinking span { width: 6px; height: 6px; border-radius: 50%; background: var(--dim2); animation: chatpulse 1.2s ease-in-out infinite; }
+  .chat-thinking span:nth-child(2) { animation-delay: 0.2s; }
+  .chat-thinking span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes chatpulse { 0%,80%,100%{transform:scale(0.7);opacity:0.5;} 40%{transform:scale(1);opacity:1;} }
+
+
+  /* ── DECISIONS ── */
+  .decision-item { background: var(--card2); border: 1px solid var(--border); border-radius: 4px; padding: 12px 14px; margin-bottom: 10px; }
+  .decision-item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .decision-title { font-family: var(--font-head); font-weight: 600; font-size: 14px; color: #fff; }
+  .decision-date { font-size: 10px; color: var(--dim); }
+  .decision-row { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; margin-top: 6px; }
+  .decision-field-label { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--amber); padding-top: 2px; }
+  .decision-field-value { font-size: 11px; color: var(--dim); line-height: 1.6; }
+  .review-badge { display: inline-block; padding: 2px 6px; border-radius: 2px; font-size: 9px; background: rgba(26,158,143,0.15); color: var(--teal); border: 1px solid rgba(26,158,143,0.3); }
+  .review-badge.overdue { background: rgba(192,57,43,0.15); color: #e74c3c; border-color: rgba(192,57,43,0.3); }
+
+  /* ── KPIs ── */
+  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  @media(max-width:480px) { .kpi-grid { grid-template-columns: 1fr; } }
+  .kpi-card { background: var(--card2); border: 1px solid var(--border); border-radius: 4px; padding: 12px; }
+  .kpi-card-label { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin-bottom: 8px; }
+  .kpi-stars { display: flex; gap: 4px; }
+  .kpi-star { font-size: 20px; cursor: pointer; color: var(--border2); transition: color 0.1s; user-select: none; }
+  .kpi-star.active { color: var(--amber); }
+  .kpi-star:hover { color: var(--amber); }
+  .chart-container { position: relative; height: 220px; }
+
+  /* ── REVIEW ── */
+  .review-question { background: var(--card2); border: 1px solid var(--border); border-radius: 4px; padding: 14px; margin-bottom: 12px; }
+  .review-q-number { font-size: 9px; letter-spacing: 0.1em; color: var(--amber); text-transform: uppercase; margin-bottom: 6px; }
+  .review-q-text { font-size: 13px; color: var(--text); margin-bottom: 10px; line-height: 1.6; }
+  .review-history-item { border-left: 2px solid var(--border2); padding: 10px 14px; margin-bottom: 10px; }
+  .review-history-date { font-size: 10px; color: var(--dim); margin-bottom: 8px; }
+  .review-history-q { font-size: 10px; color: var(--amber); margin-bottom: 2px; }
+  .review-history-a { font-size: 11px; color: var(--text); margin-bottom: 8px; line-height: 1.5; }
+
+  /* ── TEMPLATES ── */
+  .template-item { background: var(--card2); border: 1px solid var(--border); border-radius: 4px; margin-bottom: 10px; overflow: hidden; }
+  .template-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; cursor: pointer; }
+  .template-name { font-family: var(--font-head); font-weight: 600; font-size: 13px; color: #fff; }
+  .template-chevron { color: var(--dim); font-size: 11px; transition: transform 0.2s; }
+  .template-item.open .template-chevron { transform: rotate(180deg); }
+  .template-body { display: none; padding: 12px 14px; border-top: 1px solid var(--border); }
+  .template-item.open .template-body { display: block; }
+  .template-text { font-size: 11px; color: var(--dim); line-height: 1.8; white-space: pre-line; }
+  .copy-toast { display: none; position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); background: var(--teal); color: #fff; padding: 6px 16px; border-radius: 4px; font-size: 11px; z-index: 100; }
+  .copy-toast.show { display: block; animation: fadeIn 0.2s ease; }
+
+  /* ── VOICE ── */
+  .voice-btn { width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--card2); border: 1px solid var(--border2); cursor: pointer; font-size: 16px; transition: all 0.15s; }
+  .voice-btn:hover { background: var(--border); }
+  .voice-btn.recording { background: rgba(192,57,43,0.2); border-color: #c0392b; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,0.4);} 50%{box-shadow:0 0 0 6px rgba(192,57,43,0);} }
+
+  /* ── MODAL ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 200; }
+  .modal { background: var(--card); border: 1px solid var(--border2); border-radius: 8px; padding: 28px; max-width: 420px; width: 90%; }
+  .modal-title { font-family: var(--font-head); font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .modal-sub { font-size: 11px; color: var(--dim); margin-bottom: 20px; line-height: 1.6; }
+  .modal-note { font-size: 10px; color: var(--dim2); margin-top: 8px; line-height: 1.5; }
+
+  /* ── UTILS ── */
+  .empty-state { text-align: center; padding: 32px; color: var(--dim2); font-size: 12px; }
+  .empty-icon { font-size: 28px; margin-bottom: 8px; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+  .text-amber { color: var(--amber); }
+  .text-teal { color: var(--teal); }
+  .text-dim { color: var(--dim); }
+  .mt-8 { margin-top: 8px; }
+  .mt-4 { margin-top: 4px; }
+  .flex { display: flex; }
+  .items-center { align-items: center; }
+  .gap-8 { gap: 8px; }
+  .justify-between { justify-content: space-between; }
+
+  /* ── CONFIG ── */
+  .config-section { margin-bottom: 20px; }
+  .config-section-title { font-family: var(--font-head); font-weight: 600; font-size: 14px; color: #fff; margin-bottom: 4px; }
+  .config-section-sub { font-size: 10px; color: var(--dim); margin-bottom: 12px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .status-ok { background: #27ae60; }
+  .status-err { background: #c0392b; }
+
+  /* ================================================================
+     RESPONSIVE — MOBILE FIRST
+     Breakpoints: 360px (small phone), 480px (phone), 640px (tablet)
+  ================================================================ */
+
+  /* Nav: 7 buttons — compress label on very small screens */
+  @media(max-width:400px) {
+    .nav-btn { font-size: 7.5px; padding: 8px 2px 6px; gap: 2px; }
+    .nav-btn .icon { font-size: 15px; }
+    .header-sub { display: none; }
+    .header-title { font-size: 16px; }
+    .header { padding: 10px 14px; }
+    .content { padding: 14px 12px; }
+    .section-title { font-size: 18px; }
+    .lock-box { width: calc(100vw - 32px); padding: 28px 20px; }
+    .modal { padding: 20px 16px; }
+    .btn { font-size: 10px; padding: 7px 12px; }
+    .chat-input-row { padding: 8px 10px; gap: 6px; }
+    .card-body { padding: 12px 10px; }
+    .card-header { padding: 8px 10px; }
+    .briefing-section { padding: 8px 10px; }
+    .decision-item { padding: 10px 10px; }
+    .proj-card-header { padding: 10px 10px; }
+    .proj-card-body { padding: 10px 10px; }
+    .review-question { padding: 12px 10px; }
+    .template-header { padding: 8px 10px; }
+    .template-body { padding: 10px 10px; }
+  }
+
+  @media(max-width:480px) {
+    /* Stack decision item header vertically */
+    .decision-item-header { flex-direction: column; gap: 6px; }
+    .decision-item-header > div:last-child { flex-direction: row; align-items: center; gap: 8px; }
+    /* Chat bubbles full width */
+    .chat-msg { max-width: 96%; }
+    /* Config form rows stack */
+    .flex.gap-8.items-center { flex-wrap: wrap; }
+    .flex.gap-8.items-center .form-input { min-width: 0; }
+    /* Proj card tags wrap */
+    .proj-card-tags { gap: 4px; }
+    /* Section title smaller */
+    .section-title { font-size: 20px; }
+    /* KPI stars bigger tap target */
+    .kpi-star { font-size: 24px; }
+  }
+
+  @media(max-width:640px) {
+    /* Drop zone padding */
+    .drop-zone { padding: 20px 14px; }
+    /* Btn groups wrap */
+    .btn-group { gap: 6px; }
+    /* Chart height lower on small screens */
+    .chart-container { height: 180px; }
+    /* Review history */
+    .review-history-item { padding: 8px 10px; }
+  }
+
+  /* Touch: increase tap target for interactive elements */
+  @media(hover: none) and (pointer: coarse) {
+    .nav-btn { padding-top: 12px; padding-bottom: 10px; }
+    .kpi-star { font-size: 26px; padding: 4px; }
+    .btn { min-height: 38px; }
+    .voice-btn { width: 42px; height: 42px; }
+    .chat-send-btn { width: 42px; height: 42px; }
+    .form-input, .form-textarea, .form-select { font-size: 16px; } /* prevents iOS zoom */
+  }
+
+  /* Landscape phone */
+  @media(max-height: 500px) and (orientation: landscape) {
+    .lock-box { padding: 16px 24px; }
+    .lock-logo { font-size: 22px; margin-bottom: 2px; }
+    .lock-sub { margin-bottom: 12px; }
+    .shell { grid-template-rows: auto 1fr auto; }
+  }
+
+  /* Large screens: max-width cap */
+  @media(min-width: 900px) {
+    .content { padding: 24px 28px; }
+    .nav-btn { font-size: 10px; }
+    .nav-btn .icon { font-size: 18px; }
+  }
+
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <span class="header-title">2026</span>
+      <span class="header-sub">Painel de Crescimento</span>
+    </div>
+    <span class="header-date" id="headerDate"></span>
+  </div>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ── TAB: BRIEFING ── -->
+    <div class="content active" id="tab-briefing">
+      <div class="section-title">Briefing</div>
+      <div class="section-sub">Orientação executiva para o dia de hoje</div>
+
+      <div class="briefing-meta">
+        <span class="tag tag-amber" id="briefingDay">—</span>
+        <span class="tag tag-dim" id="briefingDateTag">—</span>
+        <span class="tag tag-teal" id="briefingWeekTag">—</span>
+      </div>
+
+      <div id="briefingContent">
+        <div class="empty-state">
+          <div class="empty-icon">🌅</div>
+          <div>Gera o briefing de hoje para começar</div>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-primary" id="btnGenBriefing" onclick="generateBriefing()">⚡ Gerar Briefing</button>
+        <button class="btn btn-ghost" id="btnReadBriefing" onclick="readBriefingAloud()" style="display:none">🔊 Ouvir</button>
+        <button class="btn btn-ghost btn-sm" onclick="loadTodayBriefing()" title="Recarregar briefing de hoje">↻ Reload</button>
+      </div>
+
+      <!-- CHAT COM GEMINI -->
+      <div class="chat-area" id="briefingChat">
+        <div class="chat-header">
+          <span class="chat-header-label">💬 Responder ao Gemini</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-ghost btn-sm" onclick="exportChat('md')" style="font-size:10px;padding:3px 8px" title="Gravar como Markdown">⬇ .md</button>
+            <button class="btn btn-ghost btn-sm" onclick="exportChat('txt')" style="font-size:10px;padding:3px 8px" title="Gravar como texto">⬇ .txt</button>
+            <button class="btn btn-ghost btn-sm" onclick="clearBriefingChat()" style="font-size:10px;padding:3px 8px">Limpar</button>
+          </div>
+        </div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <!-- hidden file inputs -->
+        <input type="file" id="chatFileInput" accept="image/*,video/*,audio/*,.pdf,.txt,.md,.csv,.json,.py,.js,.html" multiple style="display:none" onchange="handleChatFiles(this.files)">
+        <input type="file" id="chatCameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleChatFiles(this.files)">
+
+        <!-- media toolbar -->
+        <div class="media-toolbar">
+          <button class="media-btn" onclick="document.getElementById('chatCameraInput').click()" title="Tirar foto">📷 Câmara</button>
+          <button class="media-btn" onclick="document.getElementById('chatFileInput').click()" title="Anexar ficheiro">📎 Ficheiro</button>
+          <button class="media-btn" id="btnDriveChat" onclick="openDrivePicker('chat')" title="Google Drive">📂 Drive</button>
+        </div>
+
+        <!-- media preview strip -->
+        <div class="media-preview" id="chatMediaPreview"></div>
+
+        <div class="chat-input-row">
+          <textarea class="chat-input" id="chatInput" placeholder="Responde, questiona ou aprofunda... (Ctrl+V para colar imagens)" rows="1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage()}"
+            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"
+            onpaste="handleChatPaste(event)"></textarea>
+          <button class="voice-btn" onclick="voiceFill('chatInput')" title="Falar" style="flex-shrink:0">🎤</button>
+          <button class="chat-send-btn" id="chatSendBtn" onclick="sendChatMessage()" title="Enviar">↑</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── TAB: DECISÕES ── -->
+    <div class="content" id="tab-decisoes">
+      <div class="section-title">Registo de Decisões</div>
+      <div class="section-sub">Decisão → Dados → Alternativas → Critério → Revisão</div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-label">Nova Decisão</span>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label">Decisão tomada</label>
+            <div class="flex gap-8 items-center">
+              <input class="form-input" id="dec-title" placeholder="Qual foi a decisão?">
+              <button class="voice-btn" onclick="voiceFill('dec-title')" title="Falar">🎤</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Dados utilizados</label>
+            <div class="flex gap-8 items-center">
+              <textarea class="form-textarea" id="dec-dados" placeholder="Que factos, métricas ou análises suportaram esta decisão?"></textarea>
+              <button class="voice-btn" onclick="voiceFill('dec-dados')" title="Falar">🎤</button>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Alternativas consideradas</label>
+              <textarea class="form-textarea" id="dec-alt" placeholder="Quais as opções que foram descartadas e porquê?" style="min-height:60px"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Critério de escolha</label>
+              <textarea class="form-textarea" id="dec-crit" placeholder="O que determinou a escolha final?" style="min-height:60px"></textarea>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Revisão em (dias)</label>
+              <select class="form-select" id="dec-review">
+                <option value="30">30 dias</option>
+                <option value="60">60 dias</option>
+                <option value="90">90 dias</option>
+                <option value="7">7 dias</option>
+                <option value="0">Sem revisão</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Projecto/contexto</label>
+              <input class="form-input" id="dec-proj" placeholder="Ex: VisionAI+, ISCTE...">
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="saveDecision()">Guardar Decisão</button>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-size:11px;color:var(--dim)">Histórico de decisões</span>
+        <span id="decisionCount" style="font-size:10px;color:var(--amber)"></span>
+      </div>
+      <div id="decisionsList"></div>
+    </div>
+
+    <!-- ── TAB: KPIs ── -->
+    <div class="content" id="tab-kpis">
+      <div class="section-title">Tracker de KPIs</div>
+      <div class="section-sub">Auto-avaliação semanal — 1 (fraco) a 5 (excelente)</div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-card-label">Clareza de prioridades</div>
+          <div class="kpi-stars" id="stars-claridade" data-kpi="claridade"></div>
+          <div class="mt-4" style="font-size:9px;color:var(--dim2)">Respondes em 10s: qual o foco desta semana?</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-label">Ausência de retrabalho</div>
+          <div class="kpi-stars" id="stars-retrabalho" data-kpi="retrabalho"></div>
+          <div class="mt-4" style="font-size:9px;color:var(--dim2)">Projectos sem reinício ou scope drift</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-label">Cumprimento de prazos</div>
+          <div class="kpi-stars" id="stars-prazos" data-kpi="prazos"></div>
+          <div class="mt-4" style="font-size:9px;color:var(--dim2)">Entregáveis concluídos na data definida</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-label">Decisões fundamentadas</div>
+          <div class="kpi-stars" id="stars-decisoes" data-kpi="decisoes"></div>
+          <div class="mt-4" style="font-size:9px;color:var(--dim2)">Consigo explicar cada decisão em 3 min</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Nota da semana (opcional)</label>
+        <textarea class="form-textarea" id="kpi-nota" placeholder="O que marcou esta semana? Que padrão se repetiu?" style="min-height:60px"></textarea>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="saveKPI()">Guardar Semana</button>
+        <span id="lastKPISaved" style="font-size:10px;color:var(--dim);align-self:center"></span>
+      </div>
+
+      <hr class="divider">
+      <div style="margin-bottom:12px">
+        <span style="font-size:11px;color:var(--dim)">Evolução — últimas 8 semanas</span>
+      </div>
+      <div class="chart-container">
+        <canvas id="kpiChart"></canvas>
+      </div>
+    </div>
+
+    <!-- ── TAB: REVISÃO SEMANAL ── -->
+    <div class="content" id="tab-revisao">
+      <div class="section-title">Revisão Semanal</div>
+      <div class="section-sub">Três questões. Toda a semana. Sem excepções.</div>
+
+      <div class="review-question">
+        <div class="review-q-number">Questão 01</div>
+        <div class="review-q-text">O que avançou concretamente no projecto âncora esta semana? (Não o que fizeste — o que <em>avançou</em>.)</div>
+        <div class="flex gap-8 items-center">
+          <textarea class="form-textarea" id="rev-q1" placeholder="Responde aqui..." style="min-height:70px"></textarea>
+          <button class="voice-btn" onclick="voiceFill('rev-q1')" title="Falar">🎤</button>
+        </div>
+      </div>
+
+      <div class="review-question">
+        <div class="review-q-number">Questão 02</div>
+        <div class="review-q-text">Qual foi a decisão mais relevante desta semana? Consegues justificá-la com dados, alternativas e critério de escolha?</div>
+        <div class="flex gap-8 items-center">
+          <textarea class="form-textarea" id="rev-q2" placeholder="Responde aqui..." style="min-height:70px"></textarea>
+          <button class="voice-btn" onclick="voiceFill('rev-q2')" title="Falar">🎤</button>
+        </div>
+      </div>
+
+      <div class="review-question">
+        <div class="review-q-number">Questão 03</div>
+        <div class="review-q-text">Que comportamento ou tarefa desta semana estava abaixo do nível estratégico que deves operar? O que podes delegar, automatizar ou eliminar?</div>
+        <div class="flex gap-8 items-center">
+          <textarea class="form-textarea" id="rev-q3" placeholder="Responde aqui..." style="min-height:70px"></textarea>
+          <button class="voice-btn" onclick="voiceFill('rev-q3')" title="Falar">🎤</button>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="saveReview()">Guardar Revisão</button>
+        <button class="btn btn-teal" onclick="generateReviewFeedback()" id="btnRevFeedback">🤖 Feedback Gemini</button>
+      </div>
+
+      <div id="reviewFeedback" style="margin-top:16px;display:none">
+        <div class="card-header" style="background:var(--card2);border:1px solid var(--border);border-bottom:none;border-radius:4px 4px 0 0;display:flex;justify-content:space-between;align-items:center">
+          <span class="card-label">Conversa Gemini</span>
+          <button class="btn btn-ghost btn-sm" onclick="clearReviewChat()" style="font-size:9px;padding:3px 8px">Limpar</button>
+        </div>
+        <div id="reviewChatThread" style="background:var(--card);border:1px solid var(--border);border-top:none;border-bottom:none;padding:14px 18px;max-height:480px;overflow-y:auto"></div>
+        <div style="background:var(--card2);border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;padding:10px 14px;display:flex;gap:8px;align-items:flex-end">
+          <textarea id="reviewReplyInput" class="form-textarea" placeholder="Responde ao Gemini, pede mais detalhe ou contesta..." style="min-height:52px;max-height:120px;flex:1;resize:vertical;margin:0"></textarea>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="voice-btn" onclick="voiceFill('reviewReplyInput')" title="Falar">🎤</button>
+            <button class="btn btn-teal btn-sm" onclick="sendReviewReply()" id="btnSendReply" style="white-space:nowrap">Enviar</button>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <div style="margin-bottom:12px">
+        <span style="font-size:11px;color:var(--dim)">Revisões anteriores</span>
+      </div>
+      <div id="reviewHistory"></div>
+    </div>
+
+
+    <!-- TAB: PROJECTOS -->
+    <div class="content" id="tab-projectos">
+      <div class="section-title">Projectos</div>
+      <div class="section-sub">Carrega ficheiros — o Gemini analisa e fica a conhecer o teu trabalho</div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-label">Analisar novo projecto</span></div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label">Nome do projecto</label>
+            <input class="form-input" id="projName" placeholder="Ex: Norauto VisionAI+">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Ficheiros do projecto</label>
+            <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+              <div class="drop-zone-icon">📂</div>
+              <div class="drop-zone-label">Clica ou arrasta ficheiros aqui</div>
+              <div class="drop-zone-sub">Suporta .py .js .ts .html .css .json .md .txt .csv .ipynb .sql e mais</div>
+            </div>
+            <input type="file" id="fileInput" multiple style="display:none" onchange="addFiles(this.files)">
+            <button class="btn btn-ghost btn-sm" onclick="openDrivePicker('project')" style="margin-top:8px">📂 Importar do Google Drive</button>
+            <div class="file-list" id="fileList"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contexto adicional (opcional)</label>
+            <textarea class="form-textarea" id="projContext" placeholder="O que queres que o Gemini saiba antes de analisar? Ex: está em produção, usa Python 3.11, integra com SAP..." style="min-height:60px"></textarea>
+          </div>
+          <div id="projProgress" style="display:none">
+            <div class="proj-progress"><div class="proj-progress-bar" id="projProgressBar" style="width:0%"></div></div>
+            <div class="proj-progress-label" id="projProgressLabel">A ler ficheiros...</div>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-primary" id="btnAnalyse" onclick="analyseProject()">🔍 Analisar Projecto</button>
+            <button class="btn btn-ghost btn-sm" onclick="clearProjectFiles()">Limpar</button>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-size:11px;color:var(--dim)">Projectos analisados</span>
+        <span id="projCount" style="font-size:10px;color:var(--amber)"></span>
+      </div>
+      <div id="projList"></div>
+    </div>
+
+    <!-- ── TAB: TEMPLATES ── -->
+    <div class="content" id="tab-templates">
+      <div class="section-title">Biblioteca de Templates</div>
+      <div class="section-sub">Reutilizáveis. Copia com um clique. Adapta ao contexto.</div>
+      <div id="templatesList"></div>
+    </div>
+
+    <!-- ── TAB: CONFIG ── -->
+    <div class="content" id="tab-config">
+      <div class="section-title">Configuração</div>
+      <div class="section-sub">Chave API e preferências</div>
+
+
+      <div class="config-section">
+        <div class="config-section-title">Password de acesso</div>
+        <div class="config-section-sub">Pedida sempre que a app é aberta. Guardada localmente em cada dispositivo.</div>
+        <div class="form-group">
+          <label class="form-label">Password actual</label>
+          <input class="form-input" type="password" id="pwCurrent" placeholder="Password actual">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nova password</label>
+          <input class="form-input" type="password" id="pwNew" placeholder="Nova password (mín. 4 caracteres)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirmar nova password</label>
+          <input class="form-input" type="password" id="pwConfirm" placeholder="Repetir nova password">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="changePassword()">Alterar password</button>
+        <div id="pwStatus" class="mt-8" style="font-size:11px;color:var(--dim)"></div>
+      </div>
+
+      <div class="config-section">
+        <div class="config-section-title">Gemini API Key</div>
+        <div class="config-section-sub">A chave é guardada localmente no teu browser. Nunca é enviada para nenhum servidor.</div>
+        <div class="flex gap-8 items-center">
+          <input class="form-input" type="password" id="apiKeyInput" placeholder="AIzaSy...">
+          <button class="btn btn-primary btn-sm" onclick="saveApiKey()">Guardar</button>
+        </div>
+        <div id="apiStatus" class="mt-8" style="font-size:11px;color:var(--dim)"></div>
+      </div>
+
+      <div class="config-section">
+        <div class="config-section-title">Projecto âncora</div>
+        <div class="config-section-sub">Usado no briefing diário e nas revisões</div>
+        <input class="form-input" id="anchorProject" placeholder="Ex: Norauto VisionAI+" style="margin-bottom:8px">
+        <button class="btn btn-ghost btn-sm" onclick="saveConfig()">Guardar</button>
+      </div>
+
+      <div class="config-section">
+        <div class="config-section-title">Modelo Gemini</div>
+        <div class="config-section-sub">Actualiza para a versão mais recente quando disponível</div>
+        <select class="form-select" id="geminiModel" style="margin-bottom:8px">
+          <option value="gemini-3-flash-preview">gemini-3-flash-preview ✦ default</option>
+          <option value="gemini-flash-latest">gemini-flash-latest (→ gemini-3-flash-preview)</option>
+          <option value="gemini-3.1-flash-lite-preview">gemini-3.1-flash-lite-preview</option>
+          <option value="gemini-flash-lite-latest">gemini-flash-lite-latest</option>
+          <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+          <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="saveConfig()">Guardar</button>
+      </div>
+
+
+
+      <div class="config-section">
+        <div class="config-section-title">Google Drive</div>
+        <div class="config-section-sub">Liga o Google Drive para importar ficheiros directamente para o chat e para o analisador de projectos.<br><br>
+          <strong style="color:var(--amber)">Como configurar:</strong><br>
+          1. Vai a <strong>console.cloud.google.com</strong> → New Project<br>
+          2. Activa <strong>Google Drive API</strong> e <strong>Google Picker API</strong><br>
+          3. Cria credenciais OAuth 2.0 (tipo: Web application, authorized origin: o teu URL GitHub Pages)<br>
+          4. Cria também uma <strong>API Key</strong> (restrita ao teu domínio)<br>
+          5. Cola os valores aqui
+        </div>
+        <div class="form-group">
+          <label class="form-label">OAuth Client ID</label>
+          <input class="form-input" id="gdriveClientId" placeholder="xxx.apps.googleusercontent.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">API Key</label>
+          <input class="form-input" id="gdriveApiKey" placeholder="AIzaSy...">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveGdriveConfig()">Guardar e Ligar</button>
+        <div id="gdriveStatus" class="mt-8" style="font-size:11px;color:var(--dim)"></div>
+      </div>
+
+      <div class="config-section" id="syncSection">
+        <div class="config-section-title">Sincronização entre dispositivos</div>
+        <div class="config-section-sub">Usa a API do GitHub Gist para guardar os dados na web. Assim podes aceder do telemóvel, computador ou qualquer browser.<br><br>
+        <strong style="color:var(--amber)">Como configurar:</strong><br>
+        1. Vai a <strong>github.com → Settings → Developer settings → Personal access tokens → Fine-grained</strong><br>
+        2. Cria token com permissão <strong>Gists: Read and Write</strong><br>
+        3. Cola o token aqui e clica em "Criar Gist"</div>
+        <div class="form-group">
+          <label class="form-label">GitHub Personal Access Token</label>
+          <div class="flex gap-8 items-center">
+            <input class="form-input" type="password" id="githubToken" placeholder="github_pat_...">
+            <button class="btn btn-ghost btn-sm" onclick="saveGithubToken()">Guardar</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Gist ID (preenchido automaticamente)</label>
+          <input class="form-input" id="gistId" placeholder="Clica em Criar Gist primeiro" readonly style="color:var(--dim)">
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-teal btn-sm" onclick="createGist()">✦ Criar Gist</button>
+          <button class="btn btn-ghost btn-sm" onclick="syncToGist()">↑ Enviar dados</button>
+          <button class="btn btn-ghost btn-sm" onclick="syncFromGist()">↓ Receber dados</button>
+        </div>
+        <div id="syncStatus" class="mt-8" style="font-size:11px;color:var(--dim)"></div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="config-section">
+        <div class="config-section-title" style="color:#c0392b">Zona de risco</div>
+        <div class="config-section-sub">Estas acções não podem ser desfeitas</div>
+        <div class="btn-group">
+          <button class="btn btn-danger btn-sm" onclick="clearData('decisions')">Apagar decisões</button>
+          <button class="btn btn-danger btn-sm" onclick="clearData('kpis')">Apagar KPIs</button>
+          <button class="btn btn-danger btn-sm" onclick="clearData('reviews')">Apagar revisões</button>
+          <button class="btn btn-danger btn-sm" onclick="clearData('all')">Apagar tudo</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showTab('briefing',this)"><span class="icon">🌅</span>Hoje</button>
+    <button class="nav-btn" onclick="showTab('decisoes',this)"><span class="icon">📝</span>Decisões</button>
+    <button class="nav-btn" onclick="showTab('kpis',this)"><span class="icon">📊</span>KPIs</button>
+    <button class="nav-btn" onclick="showTab('revisao',this)"><span class="icon">🔄</span>Revisão</button>
+    <button class="nav-btn" onclick="showTab('projectos',this)"><span class="icon">🗂️</span>Projectos</button>
+    <button class="nav-btn" onclick="showTab('templates',this)"><span class="icon">📁</span>Templates</button>
+    <button class="nav-btn" onclick="showTab('config',this)"><span class="icon">⚙️</span>Config</button>
+  </nav>
+
+</div>
+
+<!-- PASSWORD LOCK SCREEN -->
+<div class="lock-screen" id="lockScreen">
+  <div class="lock-box">
+    <div class="lock-logo">2026</div>
+    <div class="lock-sub">PAINEL DE CRESCIMENTO</div>
+    <input class="lock-input" type="password" id="lockInput" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter') unlockApp()"
+      autocomplete="current-password">
+    <button class="lock-btn" onclick="unlockApp()">Entrar</button>
+    <div class="lock-error" id="lockError"></div>
+    <div class="lock-hint" id="lockHint"></div>
+    <div class="lock-change" onclick="showChangePassword()" id="lockChangeLink" style="display:none">Alterar password</div>
+  </div>
+</div>
+
+<!-- API KEY MODAL -->
+<div class="modal-overlay" id="apiModal">
+  <div class="modal">
+    <div class="modal-title">Configuração inicial</div>
+    <div class="modal-sub">Para activar o briefing diário e o feedback com IA, insere a tua chave Gemini API.<br>Pode ser obtida gratuitamente em <strong>aistudio.google.com</strong>.</div>
+    <div class="form-group">
+      <label class="form-label">Gemini API Key</label>
+      <input class="form-input" type="password" id="modalApiKey" placeholder="AIzaSy...">
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="saveModalApiKey()">Activar</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Mais tarde</button>
+    </div>
+    <p class="modal-note">A chave é guardada apenas no localStorage do teu browser. Nunca é partilhada.</p>
+  </div>
+</div>
+
+<!-- COPY TOAST -->
+<div class="copy-toast" id="copyToast">✓ Copiado para a área de transferência</div>
+
+<script>
+// ── SYSTEM PROMPT ─────────────────────────────────────────────────────────────
+// ── STORAGE ───────────────────────────────────────────────────────────────────
+const store = {
+  get: (key, def = null) => { try { const v = localStorage.getItem('g26_' + key); return v ? JSON.parse(v) : def; } catch { return def; } },
+  set: (key, val) => { localStorage.setItem('g26_' + key, JSON.stringify(val)); }
+};
+
+function buildSystemPrompt() {
+  const projects = store.get('projects', []);
+  const active = (projects || []).filter(p => p.active);
+  let ctx = '';
+  if (active.length > 0) {
+    ctx = '\n\nCONHECIMENTO DOS PROJECTOS DO UTILIZADOR:\n';
+    active.forEach(p => {
+      ctx += '\n--- PROJECTO: ' + p.name + ' ---\n';
+      ctx += 'Analisado em: ' + p.date + '\n';
+      ctx += p.profile + '\n';
+    });
+  }
+  return BASE_SYSTEM_PROMPT + ctx;
+}
+
+const BASE_SYSTEM_PROMPT = `És um coach executivo sénior que acompanha Fernando Costa (Nando) ao longo de 2026. Respondes sempre em português europeu (pt_PT). És directo, crítico e sem linguagem motivacional. Foca-te em comportamentos concretos e mensuráveis.
+
+CONTEXTO DO UTILIZADOR:
+- Função: E-Shop & Digital Marketing Manager, Norauto Portugal
+- Background: International Category Manager, sector automóvel
+- Formação: Pós-graduação em IA no ISCTE (em curso)
+- Projectos: Norauto VisionAI+ (âncora), App Visão+, GPTs ISCTE
+- Métodos de trabalho: Deep Work, Slow Productivity, Compound Momentum Mechanic
+- Princípio central: resultados mensuráveis e fundamentados
+
+DIRECTIVAS 2026 — O QUE PARAR:
+1. Iniciar projectos sem critério de paragem explícito
+2. Múltiplos projectos em paralelo sem hierarquia
+3. Usar IA como substituto de estruturação própria
+4. Resolver problemas técnicos abaixo do nível estratégico
+5. Explorar tecnologia sem decisão comercial associada
+6. Análise competitiva sem decisão específica a suportar
+
+DIRECTIVAS 2026 — O QUE REFORÇAR:
+1. Projecto âncora único (VisionAI+) com revisão mensal de avanço
+2. Documentar decisões: decisão → dados → alternativas → critério → risco
+3. Outputs executivos: 1 página, 3 pontos críticos, 1 decisão
+4. Follow-up de recomendações com data de revisão (30/60/90 dias)
+5. Filtro antes de qualquer tarefa: "que decisão comercial muda com isto?"
+6. Pensamento crítico sobre limites da IA, não só capacidades
+
+INDICADORES DE PROGRESSO:
+- Clareza de prioridades: responde em 10 segundos qual é o foco desta semana
+- Zero retrabalho por scope indefinido
+- Cada entregável tem versão executiva de 1 página
+- Uma decisão documentada por semana`;
+
+
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+function getApiKey() { return localStorage.getItem('g26_apikey') || ''; }
+function getModel() { return localStorage.getItem('g26_model') || 'gemini-3-flash-preview'; }
+function getAnchor() { return localStorage.getItem('g26_anchor') || 'Norauto VisionAI+'; }
+
+
+// ── GEMINI API ─────────────────────────────────────────────────────────────────
+async function callGemini(userPrompt, opts) {
+  const key = getApiKey();
+  if (!key) {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-config').classList.add('active');
+    document.querySelectorAll('.nav-btn')[5].classList.add('active');
+    showBriefingError('Chave API n\u00e3o configurada. Vai a Configura\u00e7\u00e3o.');
+    return null;
+  }
+  const model = getModel();
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+  // mediaParts: optional array of {mime_type, data} for multimodal
+  const userParts = [];
+  if (opts && opts.mediaParts && opts.mediaParts.length) {
+    opts.mediaParts.forEach(function(mp) {
+      userParts.push({ inline_data: { mime_type: mp.mime_type, data: mp.data } });
+    });
+  }
+  userParts.push({ text: userPrompt });
+  const body = {
+    system_instruction: { parts: [{ text: buildSystemPrompt() }] },
+    contents: [{ role: 'user', parts: userParts }],
+    generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
+  };
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+    let r;
+    try {
+      r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+    const data = await r.json();
+    if (data.error) {
+      const errMsg = data.error.message || JSON.stringify(data.error);
+      console.error('Gemini API error:', errMsg);
+      showBriefingError('Erro API: ' + errMsg);
+      return null;
+    }
+    // Gemini 3 thinking models return multiple parts; skip thought parts
+    const candidate = data.candidates?.[0];
+    const parts = candidate?.content?.parts || [];
+    const textPart = parts.find(p => p.text && !p.thought);
+    let text = textPart?.text || parts[0]?.text || null;
+    // Detect truncation
+    const finishReason = candidate?.finishReason;
+    if (text && finishReason === 'MAX_TOKENS') {
+      text += '\n\n⚠️ _Resposta cortada — o modelo atingiu o limite de tokens. Pede para continuar._';
+    }
+    return text;
+  } catch (e) {
+    console.error('Gemini fetch error:', e);
+    const msg = e.name === 'AbortError'
+      ? 'Tempo esgotado (30s). Verifica a chave API e o modelo em Configuração.'
+      : 'Erro de rede: ' + e.message;
+    showBriefingError(msg);
+    return null;
+  }
+}
+
+// ── VOICE ─────────────────────────────────────────────────────────────────────
+let currentSpeech = null;
+let recognition = null;
+
+function readBriefingAloud() {
+  const el = document.getElementById('briefingContent');
+  const texts = el.querySelectorAll('.briefing-section-text');
+  let full = '';
+  texts.forEach(t => { full += t.textContent + '. '; });
+  if (!full.trim()) return;
+  if (currentSpeech) { speechSynthesis.cancel(); currentSpeech = null; return; }
+  const utt = new SpeechSynthesisUtterance(full);
+  utt.lang = 'pt-PT'; utt.rate = 0.95;
+  utt.onend = () => { currentSpeech = null; };
+  currentSpeech = utt;
+  speechSynthesis.speak(utt);
+}
+
+let activeSpeakBtn = null;
+
+function speakMessage(btn, msgId) {
+  // If already speaking this message — stop
+  if (activeSpeakBtn === btn) {
+    speechSynthesis.cancel();
+    btn.classList.remove('speaking');
+    btn.textContent = '🔊';
+    activeSpeakBtn = null;
+    currentSpeech = null;
+    return;
+  }
+  // Stop any current speech
+  if (currentSpeech || activeSpeakBtn) {
+    speechSynthesis.cancel();
+    if (activeSpeakBtn) {
+      activeSpeakBtn.classList.remove('speaking');
+      activeSpeakBtn.textContent = '🔊';
+    }
+    currentSpeech = null;
+    activeSpeakBtn = null;
+  }
+  // Get text from parent div
+  const msgDiv = btn.closest('[data-msg-id]');
+  if (!msgDiv) return;
+  // Extract plain text from bubble (strip HTML)
+  const bubble = msgDiv.querySelector('.chat-bubble');
+  if (!bubble) return;
+  const plain = bubble.innerText || bubble.textContent || '';
+  if (!plain.trim()) return;
+
+  const utt = new SpeechSynthesisUtterance(plain);
+  utt.lang = 'pt-PT';
+  utt.rate = 0.95;
+  utt.pitch = 1;
+
+  // Try to use a Portuguese voice if available
+  const voices = speechSynthesis.getVoices();
+  const ptVoice = voices.find(v => v.lang.startsWith('pt')) || null;
+  if (ptVoice) utt.voice = ptVoice;
+
+  btn.classList.add('speaking');
+  btn.textContent = '⏹';
+  activeSpeakBtn = btn;
+  currentSpeech = utt;
+
+  utt.onend = () => {
+    btn.classList.remove('speaking');
+    btn.textContent = '🔊';
+    activeSpeakBtn = null;
+    currentSpeech = null;
+  };
+  utt.onerror = () => {
+    btn.classList.remove('speaking');
+    btn.textContent = '🔊';
+    activeSpeakBtn = null;
+    currentSpeech = null;
+  };
+  speechSynthesis.speak(utt);
+}
+
+function voiceFill(targetId) {
+  if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+    alert('O teu browser não suporta reconhecimento de voz. Usa Chrome ou Edge.'); return;
+  }
+  const btn = event.currentTarget;
+
+  // Toggle: if already recording, stop
+  if (recognition && recognition._active) {
+    recognition.stop();
+    recognition._active = false;
+    btn.classList.remove('recording');
+    btn.title = 'Falar';
+    return;
+  }
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+
+  // Key settings for better Portuguese comprehension
+  recognition.lang = 'pt-PT';
+  recognition.continuous = true;          // keep listening until manually stopped
+  recognition.interimResults = true;      // show partial results in real time
+  recognition.maxAlternatives = 3;        // consider 3 alternative interpretations
+
+  recognition._active = true;
+  recognition._finalTranscript = '';
+  recognition._targetId = targetId;
+
+  btn.classList.add('recording');
+  btn.title = 'Clica para parar';
+
+  const el = document.getElementById(targetId);
+
+  recognition.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const res = e.results[i];
+      if (res.isFinal) {
+        // Pick best alternative
+        recognition._finalTranscript += res[0].transcript + ' ';
+      } else {
+        interim += res[0].transcript;
+      }
+    }
+    // Show live preview in input
+    if (el) {
+      el.value = recognition._finalTranscript + interim;
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+    }
+  };
+
+  recognition.onerror = (e) => {
+    recognition._active = false;
+    btn.classList.remove('recording');
+    btn.title = 'Falar';
+    if (e.error === 'no-speech') return; // silence — don't alert
+    if (e.error === 'not-allowed') { alert('Permissão de microfone negada. Permite o acesso ao microfone no browser.'); return; }
+    console.warn('STT error:', e.error);
+  };
+
+  recognition.onend = () => {
+    recognition._active = false;
+    btn.classList.remove('recording');
+    btn.title = 'Falar';
+    // Finalise: keep only the confirmed transcript
+    if (el && recognition._finalTranscript) {
+      el.value = recognition._finalTranscript.trim();
+    }
+  };
+
+  recognition.start();
+}
+
+// ── TAB NAVIGATION ────────────────────────────────────────────────────────────
+function showTab(id, btn) {
+  document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (id === 'kpis') setTimeout(renderKPIChart, 50);
+  if (id === 'decisoes') renderDecisions();
+  if (id === 'revisao') renderReviewHistory();
+  if (id === 'config') loadConfigUI();
+  if (id === 'projectos') renderProjects();
+}
+
+// ── DATE UTILS ────────────────────────────────────────────────────────────────
+function ptDate(d = new Date()) {
+  return d.toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+}
+function getWeekLabel(d = new Date()) {
+  const jan1 = new Date(d.getFullYear(), 0, 1);
+  const week = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+  return `Sem ${week} de ${d.getFullYear()}`;
+}
+function isoDate(d = new Date()) { return d.toISOString().split('T')[0]; }
+
+// ── BRIEFING ──────────────────────────────────────────────────────────────────
+async function generateBriefing() {
+  const btn = document.getElementById('btnGenBriefing');
+  btn.disabled = true; btn.textContent = '⏳ A gerar...';
+  showLoadingBriefing();
+  try {
+  const today = new Date();
+  const dayName = today.toLocaleDateString('pt-PT', { weekday: 'long' });
+  const dateStr = today.toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' });
+  const anchor = getAnchor();
+  const prompt = `Gera um briefing executivo para ${dayName}, ${dateStr}. Projecto âncora: ${anchor}.
+
+Responde APENAS com JSON válido, sem markdown, sem texto extra:
+{
+  "foco": "Uma acção concreta e específica para hoje relacionada com ${anchor}",
+  "reflexao": "Uma pergunta difícil e incómoda sobre as directivas de 2026",
+  "alerta": "Um comportamento específico que pode estar a desviar-se dos objectivos definidos",
+  "decisao": "Uma decisão que está provavelmente pendente esta semana e que deve ser resolvida"
+}`;
+  const raw = await callGemini(prompt);
+  if (!raw) { return; }  // error already shown by callGemini
+  try {
+    const data = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    store.set('briefing_' + isoDate(), data);
+    renderBriefingData(data);
+    document.getElementById('btnReadBriefing').style.display = 'inline-flex';
+    showChatArea();
+  } catch(e) { showBriefingError('Resposta inválida do modelo: ' + e.message); }
+  } catch(e) {
+    showBriefingError('Erro inesperado: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '⚡ Gerar Briefing';
+  }
+}
+
+function loadTodayBriefing() {
+  const saved = store.get('briefing_' + isoDate());
+  if (saved) { renderBriefingData(saved); document.getElementById('btnReadBriefing').style.display = 'inline-flex'; showChatArea(); }
+}
+
+function showLoadingBriefing() {
+  const model = getModel();
+  document.getElementById('briefingContent').innerHTML = `
+    <div style="margin-bottom:12px">
+      <div class="loading-line"></div>
+      <div class="loading-line"></div>
+      <div class="loading-line"></div>
+    </div>
+    <div style="font-size:10px;color:var(--dim2);margin-top:8px">A chamar ${model}...</div>`;
+}
+
+function showBriefingError(detail) {
+  const errDetail = detail ? `<br><small style="color:var(--dim2);font-size:10px">${detail}</small>` : '';
+  document.getElementById('briefingContent').innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div>Erro ao gerar. Verifica a chave API em Configuração.${errDetail}</div></div>`;
+}
+
+function renderBriefingData(d) {
+  document.getElementById('briefingContent').innerHTML = `
+    <div class="briefing-section foco">
+      <div class="briefing-section-label">⚡ Foco de hoje</div>
+      <div class="briefing-section-text">${d.foco}</div>
+    </div>
+    <div class="briefing-section reflexao">
+      <div class="briefing-section-label">🔍 Questão de reflexão</div>
+      <div class="briefing-section-text">${d.reflexao}</div>
+    </div>
+    <div class="briefing-section alerta">
+      <div class="briefing-section-label">⚠️ Alerta de coerência</div>
+      <div class="briefing-section-text">${d.alerta}</div>
+    </div>
+    <div class="briefing-section decisao">
+      <div class="briefing-section-label">⏳ Decisão pendente</div>
+      <div class="briefing-section-text">${d.decisao}</div>
+    </div>`;
+}
+
+
+// ── BRIEFING CHAT ─────────────────────────────────────────────────────────────
+// Chat history persisted in localStorage so Gemini remembers across sessions
+function loadChatHistory() { return store.get('chatHistory', []); }
+function saveChatHistory(h) { store.set('chatHistory', h.slice(-60)); } // keep last 60 msgs
+let chatHistory = loadChatHistory();
+
+function showChatArea() {
+  document.getElementById('briefingChat').classList.add('visible');
+}
+
+function mdToHtml(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#fff">$1</strong>')
+    .replace(/\n/g, '<br>');
+}
+
+function appendChatMessage(role, text) {
+  const container = document.getElementById('chatMessages');
+  // Remove thinking indicator if present
+  const thinking = container.querySelector('.chat-thinking');
+  if (thinking) thinking.remove();
+
+  const time = new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+  const div = document.createElement('div');
+  div.className = `chat-msg ${role}`;
+  const msgId = 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+  const bubble = role === 'user'
+    ? `<div class="chat-bubble">${text.replace(/\n/g,'<br>')}</div>`
+    : `<div class="chat-bubble">${mdToHtml(text)}</div>`;
+  const actions = role === 'gemini'
+    ? `<div class="chat-msg-actions">
+        <span class="chat-msg-time">${time}</span>
+        <button class="chat-speak-btn" id="spk_${msgId}" onclick="speakMessage(this, '${msgId}')" title="Ouvir resposta">🔊</button>
+       </div>`
+    : `<span class="chat-msg-time">${time}</span>`;
+  div.setAttribute('data-msg-id', msgId);
+  div.setAttribute('data-text', text.replace(/'/g, "\'"));
+  div.innerHTML = `${bubble}${actions}`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function showChatThinking() {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg gemini';
+  div.innerHTML = '<div class="chat-thinking"><span></span><span></span><span></span></div>';
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('chatInput');
+  const sendBtn = document.getElementById('chatSendBtn');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  sendBtn.disabled = true;
+  showChatArea();
+
+  // Add to UI and history
+  // Show preview of attachments in the chat bubble
+  if (chatAttachments.length) {
+    var previewHtml = chatAttachments.map(function(att) {
+      return att.preview_url
+        ? '<img src="' + att.preview_url + '" style="max-width:160px;max-height:120px;border-radius:4px;margin-top:4px;display:block">'
+        : '<div style="font-size:10px;color:#000;opacity:0.7;margin-top:4px">' + getFileIcon(att.mime_type) + ' ' + att.name + '</div>';
+    }).join('');
+    appendChatMessage('user', text + (previewHtml ? '<br>' + previewHtml : ''));
+  } else {
+    appendChatMessage('user', text);
+  }
+  chatHistory.push({ role: 'user', text: text, date: isoDate() });
+  saveChatHistory(chatHistory);
+  // Scroll to show user message before thinking dots appear
+  const chatContainer = document.getElementById('chatMessages');
+  if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+  showChatThinking();
+
+  // Build multi-turn prompt with context
+  const briefingSaved = store.get('briefing_' + isoDate());
+  const briefingContext = briefingSaved
+    ? `\n\nBRIEFING DE HOJE:\n- Foco: ${briefingSaved.foco}\n- Reflexão: ${briefingSaved.reflexao}\n- Alerta: ${briefingSaved.alerta}\n- Decisão pendente: ${briefingSaved.decisao}`
+    : '';
+
+  const historyLines = chatHistory.slice(0, -1).map(m =>
+    `${m.role === 'user' ? 'Nando' : 'Gemini'}: ${m.text}`
+  ).join('\n');
+
+  const fullPrompt = `${briefingContext ? 'CONTEXTO DO BRIEFING:' + briefingContext + '\n\n' : ''}${historyLines ? 'HISTÓRICO DA CONVERSA:\n' + historyLines + '\n\n' : ''}Nando: ${text}\n\nResponde de forma directa e crítica, em pt_PT, sem linguagem motivacional.`;
+
+  // Pass any media attachments to Gemini
+  var mediaParts = chatAttachments.slice();
+  chatAttachments = [];
+  renderChatMediaPreview();
+
+  const response = await callGemini(fullPrompt, { mediaParts: mediaParts });
+  sendBtn.disabled = false;
+
+  if (response) {
+    chatHistory.push({ role: 'model', text: response, date: isoDate() });
+    saveChatHistory(chatHistory);
+    appendChatMessage('gemini', response);
+  } else {
+    appendChatMessage('gemini', '⚠️ Erro ao obter resposta. Verifica a chave API.');
+  }
+}
+
+
+function restoreChatHistory() {
+  if (!chatHistory.length) return;
+  showChatArea();
+  const container = document.getElementById('chatMessages');
+  // Show last 20 messages to avoid overwhelming the UI
+  const recent = chatHistory.slice(-20);
+  recent.forEach(m => {
+    const time = m.date || '';
+    const div = document.createElement('div');
+    div.className = `chat-msg ${m.role === 'user' ? 'user' : 'gemini'}`;
+    const bubble = m.role === 'user'
+      ? `<div class="chat-bubble">${m.text.replace(/\n/g,'<br>')}</div>`
+      : `<div class="chat-bubble">${mdToHtml(m.text)}</div>`;
+    div.innerHTML = `${bubble}<span class="chat-msg-time">${time}</span>`;
+    container.appendChild(div);
+  });
+  container.scrollTop = container.scrollHeight;
+}
+
+function clearBriefingChat() {
+  if (!confirm('Limpar todo o histórico de conversa? O Gemini deixará de se lembrar do que foi discutido.')) return;
+  chatHistory = [];
+  saveChatHistory([]);
+  document.getElementById('chatMessages').innerHTML = '';
+}
+
+
+
+// -- PROJECTS --
+let stagedFiles = [];
+
+function addFiles(fileList) {
+  Array.from(fileList).forEach(function(f) {
+    if (!stagedFiles.find(function(x) { return x.name === f.name; })) {
+      stagedFiles.push({ name: f.name, size: f.size, file: f });
+    }
+  });
+  renderStagedFiles();
+}
+
+function renderStagedFiles() {
+  const list = document.getElementById('fileList');
+  if (!stagedFiles.length) { list.innerHTML = ''; return; }
+  list.innerHTML = stagedFiles.map(function(f, i) {
+    return '<div class="file-item"><span class="file-item-name">📄 ' + f.name + '</span><div style="display:flex;align-items:center;gap:8px"><span class="file-item-size">' + (f.size/1024).toFixed(1) + 'KB</span><button class="file-item-remove" onclick="removeFile(' + i + ')">x</button></div></div>';
+  }).join('');
+}
+
+function removeFile(i) {
+  stagedFiles.splice(i, 1);
+  renderStagedFiles();
+}
+
+function clearProjectFiles() {
+  stagedFiles = [];
+  const fl = document.getElementById('fileList');
+  const pn = document.getElementById('projName');
+  const pc = document.getElementById('projContext');
+  if (fl) fl.innerHTML = '';
+  if (pn) pn.value = '';
+  if (pc) pc.value = '';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const dz = document.getElementById('dropZone');
+  if (!dz) return;
+  dz.addEventListener('dragover', function(e) { e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', function() { dz.classList.remove('dragover'); });
+  dz.addEventListener('drop', function(e) {
+    e.preventDefault();
+    dz.classList.remove('dragover');
+    addFiles(e.dataTransfer.files);
+  });
+});
+
+function readFileText(file) {
+  return new Promise(function(resolve) {
+    var skipExts = ['png','jpg','jpeg','gif','svg','ico','woff','woff2','ttf','eot','mp4','mp3','zip','tar','gz','exe','dll','pdf'];
+    var ext = file.name.split('.').pop().toLowerCase();
+    if (skipExts.includes(ext)) { resolve('[Ficheiro binário ignorado: ' + file.name + ']'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e) { resolve(e.target.result); };
+    reader.onerror = function() { resolve('[Erro ao ler: ' + file.name + ']'); };
+    reader.readAsText(file, 'utf-8');
+  });
+}
+
+function setProgress(pct, label) {
+  var bar = document.getElementById('projProgressBar');
+  var lbl = document.getElementById('projProgressLabel');
+  if (bar) bar.style.width = pct + '%';
+  if (lbl) lbl.textContent = label;
+}
+
+async function analyseProject() {
+  const name = document.getElementById('projName').value.trim();
+  if (!name) { alert('Define um nome para o projecto.'); return; }
+  if (!stagedFiles.length) { alert('Carrega pelo menos um ficheiro.'); return; }
+
+  const btn = document.getElementById('btnAnalyse');
+  btn.disabled = true; btn.textContent = '⏳ A analisar...';
+  document.getElementById('projProgress').style.display = 'block';
+  setProgress(10, 'A ler ficheiros...');
+
+  const fileContents = [];
+  for (let i = 0; i < stagedFiles.length; i++) {
+    let text = await readFileText(stagedFiles[i].file);
+    if (text.length > 30000) text = text.slice(0, 30000) + '\n... [truncado a 30K chars]';
+    fileContents.push('=== FICHEIRO: ' + stagedFiles[i].name + ' ===\n' + text);
+    setProgress(10 + Math.round((i+1)/stagedFiles.length * 40), 'A ler ' + stagedFiles[i].name + '...');
+  }
+
+  setProgress(55, 'A enviar para o Gemini...');
+
+  const extra = document.getElementById('projContext').value.trim();
+  const prompt = 'Analisa o seguinte projecto e gera um perfil estruturado completo. Responde em português europeu (pt_PT).\n\nNOME DO PROJECTO: ' + name + '\n' + (extra ? 'CONTEXTO ADICIONAL: ' + extra + '\n' : '') + '\nFICHEIROS DO PROJECTO:\n' + fileContents.join('\n\n') + '\n\nGera um perfil com as seguintes secções (usa ** para títulos):\n\n**RESUMO EXECUTIVO**\nO que é este projecto em 3 linhas. Para que serve. Qual o problema que resolve.\n\n**STACK TECNOLÓGICO**\nLinguagens, frameworks, bibliotecas, APIs, serviços externos identificados.\n\n**ARQUITECTURA E FUNCIONAMENTO**\nComo o projecto está estruturado. Fluxos principais. Componentes chave.\n\n**ESTADO ACTUAL**\nO que está implementado. O que está incompleto ou com problemas visíveis.\n\n**DEPENDÊNCIAS E INTEGRAÇÕES**\nServiços externos, APIs, bases de dados, sistemas com que integra.\n\n**PONTOS FORTES**\nO que está bem feito ou bem estruturado.\n\n**RISCOS E LIMITAÇÕES**\nProblemas técnicos, dívida técnica, limitações de escala ou segurança identificados.\n\n**OPORTUNIDADES DE MELHORIA**\n3 a 5 acções concretas que aumentariam o valor comercial ou a robustez do projecto.\n\n**RELEVÂNCIA PARA OS OBJECTIVOS 2026**\nComo este projecto se relaciona com os objectivos estratégicos do utilizador.';
+
+  setProgress(70, 'Gemini a analisar...');
+
+  const response = await callGemini(prompt);
+  btn.disabled = false; btn.textContent = '🔍 Analisar Projecto';
+  document.getElementById('projProgress').style.display = 'none';
+  if (!response) return;
+
+  const projects = store.get('projects', []);
+  const existing = projects.findIndex(function(p) { return p.name === name; });
+  const entry = { id: Date.now(), name: name, date: isoDate(), files: stagedFiles.map(function(f) { return f.name; }), profile: response, active: true };
+  if (existing >= 0) projects[existing] = entry;
+  else projects.unshift(entry);
+  store.set('projects', projects);
+
+  clearProjectFiles();
+  renderProjects();
+}
+
+function toggleProjectContext(id) {
+  const projects = store.get('projects', []);
+  const p = projects.find(function(x) { return x.id === id; });
+  if (p) { p.active = !p.active; store.set('projects', projects); renderProjects(); }
+}
+
+function deleteProject(id) {
+  if (!confirm('Eliminar este projecto da base de conhecimento?')) return;
+  store.set('projects', store.get('projects', []).filter(function(p) { return p.id !== id; }));
+  renderProjects();
+}
+
+function renderProjects() {
+  const projects = store.get('projects', []);
+  const container = document.getElementById('projList');
+  const countEl = document.getElementById('projCount');
+  if (!container) return;
+  if (countEl) countEl.textContent = projects.length + ' projecto' + (projects.length !== 1 ? 's' : '');
+  if (!projects.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🗂️</div><div>Nenhum projecto analisado ainda</div></div>';
+    return;
+  }
+  container.innerHTML = projects.map(function(p) {
+    const formatted = (p.profile || '')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br>');
+    const fileLabels = p.files.slice(0, 4).map(function(f) { return '<span class="tag tag-dim">' + f + '</span>'; }).join('');
+    const moreLabel = p.files.length > 4 ? '<span class="tag tag-dim">+' + (p.files.length - 4) + '</span>' : '';
+    return '<div class="proj-card"><div class="proj-card-header"><div style="flex:1"><div class="proj-card-name">' + p.name + '</div><div class="proj-card-date">Analisado em ' + p.date + ' · ' + p.files.length + ' ficheiro' + (p.files.length !== 1 ? 's' : '') + '</div><div class="proj-card-tags" style="margin-top:8px"><span class="proj-context-badge ' + (p.active ? '' : 'inactive') + '" onclick="toggleProjectContext(' + p.id + ')">' + (p.active ? '❖ Activo no contexto' : '○ Inactivo') + '</span>' + fileLabels + moreLabel + '</div></div><button class="btn btn-danger btn-sm" onclick="deleteProject(' + p.id + ')">x</button></div><div class="proj-card-body">' + formatted + '</div></div>';
+  }).join('');
+}
+
+
+// ── MEDIA & CAMERA ─────────────────────────────────────────
+let chatAttachments = []; // {mime_type, data, name, preview_url, kind}
+
+function fileToBase64(file) {
+  return new Promise(function(resolve, reject) {
+    var r = new FileReader();
+    r.onload = function(e) {
+      // e.target.result is "data:mime;base64,xxxx" — extract only base64 part
+      resolve(e.target.result.split(',')[1]);
+    };
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+function getFileIcon(mime) {
+  if (mime.startsWith('image/')) return '🖼️';
+  if (mime.startsWith('video/')) return '🎬';
+  if (mime.startsWith('audio/')) return '🎧';
+  if (mime === 'application/pdf') return '📋';
+  return '📄';
+}
+
+async function handleChatFiles(fileList) {
+  for (var i = 0; i < fileList.length; i++) {
+    var file = fileList[i];
+    var mime = file.type || 'application/octet-stream';
+    var base64 = await fileToBase64(file);
+    var preview_url = mime.startsWith('image/') ? 'data:' + mime + ';base64,' + base64 : null;
+    chatAttachments.push({ mime_type: mime, data: base64, name: file.name, preview_url: preview_url });
+  }
+  renderChatMediaPreview();
+  // Reset file inputs so same file can be re-added
+  document.getElementById('chatFileInput').value = '';
+  document.getElementById('chatCameraInput').value = '';
+}
+
+function removeChatAttachment(i) {
+  chatAttachments.splice(i, 1);
+  renderChatMediaPreview();
+}
+
+function renderChatMediaPreview() {
+  var container = document.getElementById('chatMediaPreview');
+  if (!container) return;
+  if (!chatAttachments.length) {
+    container.classList.remove('visible');
+    container.innerHTML = '';
+    return;
+  }
+  container.classList.add('visible');
+  container.innerHTML = chatAttachments.map(function(att, i) {
+    var inner = att.preview_url
+      ? '<img src="' + att.preview_url + '" alt="' + att.name + '">'
+      : '<div class="media-file-thumb"><div class="mf-icon">' + getFileIcon(att.mime_type) + '</div><div class="mf-ext">' + att.name.split('.').pop().toUpperCase() + '</div></div>';
+    return '<div class="media-thumb">' + inner + '<div class="media-thumb-label">' + att.name + '</div><button class="media-thumb-remove" onclick="removeChatAttachment(' + i + ')">×</button></div>';
+  }).join('');
+}
+
+// ── GOOGLE DRIVE ──────────────────────────────────────────
+function getGdriveClientId() { return localStorage.getItem('g26_gdrive_client_id') || ''; }
+function getGdriveApiKey() { return localStorage.getItem('g26_gdrive_api_key') || ''; }
+
+function saveGdriveConfig() {
+  var cid = document.getElementById('gdriveClientId').value.trim();
+  var key = document.getElementById('gdriveApiKey').value.trim();
+  if (!cid || !key) { alert('Preenche os dois campos.'); return; }
+  localStorage.setItem('g26_gdrive_client_id', cid);
+  localStorage.setItem('g26_gdrive_api_key', key);
+  var s = document.getElementById('gdriveStatus');
+  if (s) s.innerHTML = '<span class="status-dot status-ok"></span>Configuração guardada. Carrega o Google Picker.';
+  loadGooglePickerApi();
+}
+
+var gPickerLoaded = false;
+var gTokenClient = null;
+var gAccessToken = null;
+var gPendingPickerTarget = null;
+
+function loadGooglePickerApi() {
+  if (gPickerLoaded) return;
+  if (!getGdriveClientId() || !getGdriveApiKey()) return;
+  // Load gapi
+  if (!window.gapi) {
+    var s1 = document.createElement('script');
+    s1.src = 'https://apis.google.com/js/api.js';
+    s1.onload = function() {
+      window.gapi.load('picker', function() { gPickerLoaded = true; });
+    };
+    document.head.appendChild(s1);
+  }
+  // Load GSI (token client)
+  if (!window.google || !window.google.accounts) {
+    var s2 = document.createElement('script');
+    s2.src = 'https://accounts.google.com/gsi/client';
+    document.head.appendChild(s2);
+  }
+}
+
+function ensureGoogleAuth(callback) {
+  if (gAccessToken) { callback(); return; }
+  var cid = getGdriveClientId();
+  if (!cid) { alert('Configura o Google Drive em Configuração primeiro.'); return; }
+  if (!window.google || !window.google.accounts) {
+    alert('A API do Google ainda está a carregar. Tenta novamente em 2 segundos.');
+    loadGooglePickerApi();
+    return;
+  }
+  gTokenClient = window.google.accounts.oauth2.initTokenClient({
+    client_id: cid,
+    scope: 'https://www.googleapis.com/auth/drive.readonly',
+    callback: function(resp) {
+      if (resp.error) { alert('Erro de autorização: ' + resp.error); return; }
+      gAccessToken = resp.access_token;
+      callback();
+    }
+  });
+  gTokenClient.requestAccessToken({ prompt: 'consent' });
+}
+
+function openDrivePicker(target) {
+  // target: 'chat' | 'project'
+  gPendingPickerTarget = target;
+  if (!getGdriveClientId() || !getGdriveApiKey()) {
+    alert('Configura o Google Drive em Configuração primeiro (Client ID + API Key).');
+    return;
+  }
+  loadGooglePickerApi();
+  ensureGoogleAuth(function() {
+    if (!window.gapi || !window.gapi.picker) {
+      alert('Google Picker ainda a carregar. Tenta em 2 segundos.');
+      return;
+    }
+    var view = new window.google.picker.DocsView()
+      .setIncludeFolders(false)
+      .setMimeTypes('image/jpeg,image/png,image/gif,image/webp,video/mp4,audio/mpeg,audio/wav,application/pdf,text/plain,text/csv,application/json,text/html,text/javascript,text/x-python');
+    var picker = new window.google.picker.PickerBuilder()
+      .addView(view)
+      .addView(new window.google.picker.DocsUploadView())
+      .setOAuthToken(gAccessToken)
+      .setDeveloperKey(getGdriveApiKey())
+      .setCallback(drivePickerCallback)
+      .setTitle('Selecciona ficheiros do Drive')
+      .enableFeature(window.google.picker.Feature.MULTISELECT_ENABLED)
+      .build();
+    picker.setVisible(true);
+  });
+}
+
+async function drivePickerCallback(data) {
+  if (data.action !== window.google.picker.Action.PICKED) return;
+  var docs = data.docs || [];
+  for (var i = 0; i < docs.length; i++) {
+    var doc = docs[i];
+    try {
+      var r = await fetch(
+        'https://www.googleapis.com/drive/v3/files/' + doc.id + '?alt=media',
+        { headers: { Authorization: 'Bearer ' + gAccessToken } }
+      );
+      var blob = await r.blob();
+      var mime = doc.mimeType || blob.type;
+      var file = new File([blob], doc.name, { type: mime });
+      if (gPendingPickerTarget === 'chat') {
+        await handleChatFiles([file]);
+      } else if (gPendingPickerTarget === 'project') {
+        addFiles([file]);
+      }
+    } catch(e) {
+      console.error('Drive download error:', e);
+      alert('Erro ao descarregar ' + doc.name + ': ' + e.message);
+    }
+  }
+}
+
+
+
+// -- EXPORT CHAT --
+function exportChat(format) {
+  const history = store.get('chatHistory', []);
+  if (!history.length) { alert('Não há conversa para gravar.'); return; }
+
+  const today = isoDate();
+  let output = '';
+
+  if (format === 'md') {
+    output += '# Chat 2026 — ' + today + '\n\n';
+    history.forEach(function(m) {
+      const who = m.role === 'user' ? '**Nando**' : '**Gemini**';
+      const time = m.date || today;
+      output += '### ' + who + ' — ' + time + '\n\n';
+      output += m.text + '\n\n---\n\n';
+    });
+  } else {
+    output += 'Chat 2026 — ' + today + '\n';
+    output += '='.repeat(40) + '\n\n';
+    history.forEach(function(m) {
+      const who = m.role === 'user' ? 'Nando' : 'Gemini';
+      const time = m.date || today;
+      output += '[' + who + ' — ' + time + ']\n';
+      output += m.text + '\n\n';
+      output += '-'.repeat(40) + '\n\n';
+    });
+  }
+
+  const blob = new Blob([output], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '2026-chat-' + today + '.' + format;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// -- CLIPBOARD PASTE --
+function handleChatPaste(e) {
+  const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+  let hasImage = false;
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.type.startsWith('image/')) {
+      hasImage = true;
+      e.preventDefault(); // don't paste as text
+      const file = item.getAsFile();
+      if (!file) continue;
+      const mime = item.type;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        const base64 = ev.target.result.split(',')[1];
+        const preview_url = ev.target.result;
+        chatAttachments.push({ mime_type: mime, data: base64, name: 'clipboard_' + Date.now() + '.png', preview_url });
+        renderChatMediaPreview();
+        showChatArea();
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+  // If no image in clipboard, let normal text paste proceed
+}
+
+// ── DECISIONS ─────────────────────────────────────────────────────────────────
+function saveDecision() {
+  const title = document.getElementById('dec-title').value.trim();
+  if (!title) { alert('Preenche pelo menos a decisão tomada.'); return; }
+  const decisions = store.get('decisions', []);
+  const reviewDays = parseInt(document.getElementById('dec-review').value);
+  const reviewDate = reviewDays > 0 ? new Date(Date.now() + reviewDays * 86400000).toISOString().split('T')[0] : null;
+  decisions.unshift({
+    id: Date.now(),
+    title,
+    dados: document.getElementById('dec-dados').value.trim(),
+    alt: document.getElementById('dec-alt').value.trim(),
+    crit: document.getElementById('dec-crit').value.trim(),
+    proj: document.getElementById('dec-proj').value.trim(),
+    reviewDate,
+    date: isoDate()
+  });
+  store.set('decisions', decisions);
+  ['dec-title','dec-dados','dec-alt','dec-crit','dec-proj'].forEach(id => document.getElementById(id).value = '');
+  renderDecisions();
+}
+
+function deleteDecision(id) {
+  if (!confirm('Eliminar esta decisão?')) return;
+  store.set('decisions', store.get('decisions', []).filter(d => d.id !== id));
+  renderDecisions();
+}
+
+function renderDecisions() {
+  const list = store.get('decisions', []);
+  const container = document.getElementById('decisionsList');
+  const count = document.getElementById('decisionCount');
+  count.textContent = list.length + ' decisão' + (list.length !== 1 ? 'ões' : '');
+  if (!list.length) { container.innerHTML = `<div class="empty-state"><div class="empty-icon">📝</div><div>Nenhuma decisão registada ainda</div></div>`; return; }
+  const today = isoDate();
+  container.innerHTML = list.map(d => {
+    const overdue = d.reviewDate && d.reviewDate < today;
+    const reviewBadge = d.reviewDate ? `<span class="review-badge ${overdue ? 'overdue' : ''}">Rev: ${d.reviewDate}</span>` : '';
+    return `<div class="decision-item">
+      <div class="decision-item-header">
+        <div><div class="decision-title">${d.title}</div>${d.proj ? `<span class="tag tag-dim mt-4" style="margin-top:4px;display:inline-block">${d.proj}</span>` : ''}</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <span class="decision-date">${d.date}</span>
+          ${reviewBadge}
+          <button class="btn btn-danger btn-sm" onclick="deleteDecision(${d.id})">×</button>
+        </div>
+      </div>
+      ${d.dados || d.alt || d.crit ? `<div class="decision-row">
+        ${d.dados ? `<span class="decision-field-label">Dados</span><span class="decision-field-value">${d.dados}</span>` : ''}
+        ${d.alt ? `<span class="decision-field-label">Alt.</span><span class="decision-field-value">${d.alt}</span>` : ''}
+        ${d.crit ? `<span class="decision-field-label">Critério</span><span class="decision-field-value">${d.crit}</span>` : ''}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+const KPI_KEYS = ['claridade', 'retrabalho', 'prazos', 'decisoes'];
+const KPI_LABELS = { claridade: 'Clareza', retrabalho: 'Retrabalho', prazos: 'Prazos', decisoes: 'Decisões' };
+const KPI_COLORS = { claridade: '#e8a020', retrabalho: '#1a9e8f', prazos: '#5b8def', decisoes: '#a78bfa' };
+let kpiChartInst = null;
+
+function initStars() {
+  KPI_KEYS.forEach(kpi => {
+    const container = document.getElementById('stars-' + kpi);
+    container.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+      const s = document.createElement('span');
+      s.className = 'kpi-star'; s.textContent = '●'; s.dataset.value = i; s.dataset.kpi = kpi;
+      s.onclick = () => setStars(kpi, i);
+      container.appendChild(s);
+    }
+  });
+}
+
+function setStars(kpi, val) {
+  const container = document.getElementById('stars-' + kpi);
+  container.querySelectorAll('.kpi-star').forEach(s => {
+    s.classList.toggle('active', parseInt(s.dataset.value) <= val);
+  });
+  container.dataset.value = val;
+}
+
+function getStarValue(kpi) {
+  return parseInt(document.getElementById('stars-' + kpi).dataset.value || 0);
+}
+
+function saveKPI() {
+  const values = {};
+  KPI_KEYS.forEach(k => { values[k] = getStarValue(k); });
+  if (Object.values(values).every(v => v === 0)) { alert('Avalia pelo menos um KPI.'); return; }
+  const kpis = store.get('kpis', []);
+  const week = getWeekLabel();
+  const existing = kpis.findIndex(e => e.week === week);
+  const entry = { week, date: isoDate(), nota: document.getElementById('kpi-nota').value.trim(), ...values };
+  if (existing >= 0) kpis[existing] = entry; else kpis.push(entry);
+  store.set('kpis', kpis);
+  document.getElementById('lastKPISaved').textContent = '✓ Guardado — ' + week;
+  renderKPIChart();
+}
+
+function renderKPIChart() {
+  const kpis = store.get('kpis', []).slice(-8);
+  const canvas = document.getElementById('kpiChart');
+  if (!canvas) return;
+  if (kpiChartInst) { kpiChartInst.destroy(); kpiChartInst = null; }
+  if (!kpis.length) { canvas.parentElement.innerHTML = `<div class="empty-state"><div class="empty-icon">📊</div><div>Ainda sem dados. Faz a primeira avaliação.</div></div>`; return; }
+  const labels = kpis.map(e => e.week.replace('Sem ', 'S'));
+  kpiChartInst = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: KPI_KEYS.map(k => ({
+        label: KPI_LABELS[k],
+        data: kpis.map(e => e[k] || 0),
+        borderColor: KPI_COLORS[k],
+        backgroundColor: KPI_COLORS[k] + '22',
+        borderWidth: 2,
+        pointBackgroundColor: KPI_COLORS[k],
+        pointRadius: 4,
+        tension: 0.3,
+        fill: false
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#6b7a94', font: { family: 'JetBrains Mono', size: 10 }, boxWidth: 10 } } },
+      scales: {
+        y: { min: 0, max: 5, ticks: { color: '#6b7a94', font: { family: 'JetBrains Mono', size: 10 }, stepSize: 1 }, grid: { color: '#1c2638' } },
+        x: { ticks: { color: '#6b7a94', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#1c2638' } }
+      }
+    }
+  });
+}
+
+// ── WEEKLY REVIEW ─────────────────────────────────────────────────────────────
+function saveReview() {
+  const q1 = document.getElementById('rev-q1').value.trim();
+  const q2 = document.getElementById('rev-q2').value.trim();
+  const q3 = document.getElementById('rev-q3').value.trim();
+  if (!q1 && !q2 && !q3) { alert('Responde pelo menos uma questão.'); return; }
+  const reviews = store.get('reviews', []);
+  reviews.unshift({ id: Date.now(), week: getWeekLabel(), date: isoDate(), q1, q2, q3 });
+  store.set('reviews', reviews);
+  renderReviewHistory();
+  alert('Revisão guardada.');
+}
+
+// ── REVIEW CHAT ────────────────────────────────────────────────────────────────
+let reviewChatHistory = []; // [{role:'user'|'model', text:'...'}]
+
+function formatGeminiText(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#fff">$1</strong>')
+    .replace(/\n/g, '<br>');
+}
+
+function appendReviewMessage(role, text) {
+  const thread = document.getElementById('reviewChatThread');
+  const isUser = role === 'user';
+  const bubble = document.createElement('div');
+  bubble.style.cssText = `
+    margin-bottom:12px;
+    display:flex;
+    flex-direction:column;
+    align-items:${isUser ? 'flex-end' : 'flex-start'};
+  `;
+  const label = document.createElement('div');
+  label.style.cssText = `font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;`;
+  label.textContent = isUser ? 'Tu' : 'Gemini';
+  const msg = document.createElement('div');
+  msg.style.cssText = `
+    max-width:88%;
+    padding:10px 13px;
+    border-radius:6px;
+    font-size:12px;
+    line-height:1.8;
+    ${isUser
+      ? 'background:var(--card2);border:1px solid var(--border2);color:var(--text);'
+      : 'background:rgba(26,158,143,0.08);border:1px solid rgba(26,158,143,0.2);color:var(--text);'}
+  `;
+  msg.innerHTML = isUser ? text.replace(/\n/g,'<br>') : formatGeminiText(text);
+  bubble.appendChild(label);
+  bubble.appendChild(msg);
+  thread.appendChild(bubble);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function appendThinking() {
+  const thread = document.getElementById('reviewChatThread');
+  const el = document.createElement('div');
+  el.id = 'thinkingIndicator';
+  el.style.cssText = 'margin-bottom:12px;display:flex;flex-direction:column;align-items:flex-start;';
+  el.innerHTML = `
+    <div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Gemini</div>
+    <div style="padding:10px 13px;border-radius:6px;background:rgba(26,158,143,0.08);border:1px solid rgba(26,158,143,0.2);">
+      <span style="color:var(--teal);font-size:12px">● </span>
+      <span style="color:var(--dim);font-size:11px">A analisar...</span>
+    </div>`;
+  thread.appendChild(el);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function removeThinking() {
+  const el = document.getElementById('thinkingIndicator');
+  if (el) el.remove();
+}
+
+async function callGeminiMultiturn(history) {
+  const key = getApiKey();
+  if (!key) { showBriefingError('Chave API não configurada.'); return null; }
+  const model = getModel();
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+  const contents = history.map(m => ({
+    role: m.role,
+    parts: [{ text: m.text }]
+  }));
+  const body = {
+    system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+    contents,
+    generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
+  };
+  try {
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const data = await r.json();
+    if (data.error) { console.error('Gemini multiturn error:', data.error.message); return null; }
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const textPart = parts.find(p => p.text && !p.thought);
+    return textPart?.text || parts[0]?.text || null;
+  } catch(e) { console.error('Gemini multiturn fetch error:', e); return null; }
+}
+
+async function generateReviewFeedback() {
+  const q1 = document.getElementById('rev-q1').value.trim();
+  const q2 = document.getElementById('rev-q2').value.trim();
+  const q3 = document.getElementById('rev-q3').value.trim();
+  if (!q1 && !q2 && !q3) { alert('Responde as questões primeiro.'); return; }
+  const btn = document.getElementById('btnRevFeedback');
+  btn.disabled = true; btn.textContent = '⏳ A analisar...';
+
+  // Reset chat
+  reviewChatHistory = [];
+  document.getElementById('reviewChatThread').innerHTML = '';
+  document.getElementById('reviewFeedback').style.display = 'block';
+
+  const userMsg = `Analisa esta revisão semanal e dá feedback directo, crítico e concreto. Não elogies. Identifica padrões, incoerências ou omissões. Sugere uma única acção para a semana seguinte.
+
+Questão 1 — Avanço no projecto âncora:
+${q1 || '(Sem resposta)'}
+
+Questão 2 — Decisão mais relevante:
+${q2 || '(Sem resposta)'}
+
+Questão 3 — Tarefas abaixo do nível estratégico:
+${q3 || '(Sem resposta)'}`;
+
+  reviewChatHistory.push({ role: 'user', text: userMsg });
+  appendReviewMessage('user', `Revisão da semana — Q1: ${q1 || '—'} | Q2: ${q2 || '—'} | Q3: ${q3 || '—'}`);
+  appendThinking();
+
+  const response = await callGeminiMultiturn(reviewChatHistory);
+  removeThinking();
+  btn.disabled = false; btn.textContent = '🤖 Feedback Gemini';
+
+  if (response) {
+    reviewChatHistory.push({ role: 'model', text: response });
+    appendReviewMessage('model', response);
+  }
+}
+
+async function sendReviewReply() {
+  const input = document.getElementById('reviewReplyInput');
+  const reply = input.value.trim();
+  if (!reply) return;
+  if (!reviewChatHistory.length) { alert('Gera o feedback Gemini primeiro.'); return; }
+
+  const btn = document.getElementById('btnSendReply');
+  btn.disabled = true; btn.textContent = '...';
+  input.value = '';
+
+  reviewChatHistory.push({ role: 'user', text: reply });
+  appendReviewMessage('user', reply);
+  appendThinking();
+
+  const response = await callGeminiMultiturn(reviewChatHistory);
+  removeThinking();
+  btn.disabled = false; btn.textContent = 'Enviar';
+
+  if (response) {
+    reviewChatHistory.push({ role: 'model', text: response });
+    appendReviewMessage('model', response);
+  }
+}
+
+function clearReviewChat() {
+  reviewChatHistory = [];
+  document.getElementById('reviewChatThread').innerHTML = '';
+  document.getElementById('reviewFeedback').style.display = 'none';
+  document.getElementById('reviewReplyInput').value = '';
+}
+
+function renderReviewHistory() {
+  const reviews = store.get('reviews', []);
+  const container = document.getElementById('reviewHistory');
+  if (!reviews.length) { container.innerHTML = `<div class="empty-state"><div class="empty-icon">🔄</div><div>Nenhuma revisão guardada ainda</div></div>`; return; }
+  container.innerHTML = reviews.slice(0, 6).map(r => `
+    <div class="review-history-item">
+      <div class="review-history-date">${r.week} — ${r.date}</div>
+      ${r.q1 ? `<div class="review-history-q">Projecto âncora</div><div class="review-history-a">${r.q1}</div>` : ''}
+      ${r.q2 ? `<div class="review-history-q">Decisão relevante</div><div class="review-history-a">${r.q2}</div>` : ''}
+      ${r.q3 ? `<div class="review-history-q">Abaixo do nível estratégico</div><div class="review-history-a">${r.q3}</div>` : ''}
+    </div>`).join('');
+}
+
+// ── TEMPLATES ─────────────────────────────────────────────────────────────────
+const TEMPLATES = [
+  {
+    id: 'decisao',
+    name: 'Registo de Decisão',
+    text: `DECISÃO: [O que foi decidido]
+
+DADOS UTILIZADOS:
+• [Facto ou métrica 1]
+• [Facto ou métrica 2]
+• [Fonte ou análise de suporte]
+
+ALTERNATIVAS CONSIDERADAS:
+• Opção A: [descrição] — descartada porque [razão]
+• Opção B: [descrição] — descartada porque [razão]
+
+CRITÉRIO DE ESCOLHA: [O que pesou mais na decisão final]
+
+RISCO PRINCIPAL: [O que pode correr mal]
+
+REVISÃO: [Data] — Métrica de verificação: [indicador concreto]`
+  },
+  {
+    id: 'competitivo',
+    name: 'Análise Competitiva',
+    text: `DECISÃO QUE ESTA ANÁLISE SUPORTA: [Escreve aqui antes de começar]
+
+CONCORRENTES ANALISADOS: [Roady / Feu Vert / Midas / outro]
+DATA: [dd/mm/aaaa]
+
+COMPARAÇÃO:
+| Dimensão | Norauto | Concorrente A | Concorrente B |
+|---|---|---|---|
+| Preço médio categoria | | | |
+| Visibilidade online | | | |
+| Disponibilidade stock | | | |
+
+INSIGHT PRINCIPAL: [Uma linha — o que muda na estratégia Norauto]
+
+ACÇÃO RECOMENDADA: [Concreta, com responsável e prazo]
+
+DECISÃO TOMADA: ☐ Sim   ☐ Adiada até: ___   Justificação: ___`
+  },
+  {
+    id: 'projeto',
+    name: 'Proposta de Projecto',
+    text: `NOME DO PROJECTO: [Nome]
+DATA: [dd/mm/aaaa]
+RESPONSÁVEL: Fernando Costa
+
+PROBLEMA DE NEGÓCIO:
+[Problema quantificado — qual o impacto actual em €, %, tempo]
+
+SOLUÇÃO PROPOSTA:
+[O que se vai fazer, em termos não técnicos]
+
+IMPACTO ESPERADO:
+• Métrica 1: [baseline actual] → [target] em [prazo]
+• Métrica 2: [baseline actual] → [target] em [prazo]
+
+RECURSOS NECESSÁRIOS:
+• Tempo estimado: [horas/dias]
+• Ferramentas: [lista]
+• Dependências internas: [quem precisa de aprovar ou contribuir]
+
+CRITÉRIO DE PARAGEM:
+[Condição que justifica abandonar o projecto]
+
+SPONSOR INTERNO: [Quem aprova e acompanha]
+
+REVISÃO: [30/60/90 dias] — Métrica: [indicador concreto]`
+  },
+  {
+    id: 'relatorio',
+    name: 'Relatório Semanal (Executivo)',
+    text: `SEMANA: [nº] de [ano]
+PROJECTO ÂNCORA: Norauto VisionAI+
+
+─── VERSÃO EXECUTIVA (1 página) ───
+
+SITUAÇÃO: [Verde / Amarelo / Vermelho]
+
+3 DADOS CRÍTICOS:
+1. [Facto + número]
+2. [Facto + número]
+3. [Facto + número]
+
+DECISÃO NECESSÁRIA: [O que precisa de ser decidido esta semana, por quem]
+
+─── DETALHE (opcional) ───
+
+O QUE AVANÇOU:
+[Lista de acções concluídas]
+
+O QUE NÃO AVANÇOU (e porquê):
+[Honesto e sem eufemismos]
+
+PRÓXIMA SEMANA — 3 PRIORIDADES:
+1.
+2.
+3.`
+  },
+  {
+    id: 'auditoria',
+    name: 'Audit SEO / AEO',
+    text: `URL / CATEGORIA AUDITADA: [url]
+DATA: [dd/mm/aaaa]
+DECISÃO QUE ESTA AUDITORIA SUPORTA: [Obrigatório]
+
+SEO CLÁSSICO:
+• Title tag: ☐ OK  ☐ Optimizar — [nota]
+• Meta description: ☐ OK  ☐ Optimizar — [nota]
+• H1/H2: ☐ OK  ☐ Optimizar — [nota]
+• Velocidade de página: [score] — ☐ OK  ☐ Problema
+• Mobile: ☐ OK  ☐ Problema
+
+AEO (Answer Engine Optimization):
+• Conteúdo responde a perguntas directas? ☐ Sim  ☐ Não
+• Há FAQ estruturado ou schema markup? ☐ Sim  ☐ Não
+• O conteúdo é citável por LLMs? ☐ Sim  ☐ Não
+• Posição em pesquisa generativa (AI Overviews)? [status]
+
+TOP 3 ACÇÕES:
+1. [Acção + impacto estimado + prazo]
+2. [Acção + impacto estimado + prazo]
+3. [Acção + impacto estimado + prazo]
+
+DECISÃO TOMADA: ☐ Avançar   ☐ Aguardar   Razão: ___`
+  }
+];
+
+function renderTemplates() {
+  document.getElementById('templatesList').innerHTML = TEMPLATES.map(t => `
+    <div class="template-item" id="tpl-${t.id}">
+      <div class="template-header" onclick="toggleTemplate('${t.id}')">
+        <span class="template-name">${t.name}</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-teal btn-sm" onclick="event.stopPropagation();copyTemplate('${t.id}')">Copiar</button>
+          <span class="template-chevron">▼</span>
+        </div>
+      </div>
+      <div class="template-body">
+        <pre class="template-text">${t.text}</pre>
+      </div>
+    </div>`).join('');
+}
+
+function toggleTemplate(id) {
+  const el = document.getElementById('tpl-' + id);
+  el.classList.toggle('open');
+}
+
+function copyTemplate(id) {
+  const t = TEMPLATES.find(x => x.id === id);
+  if (!t) return;
+  navigator.clipboard.writeText(t.text).then(() => {
+    const toast = document.getElementById('copyToast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2000);
+  });
+}
+
+
+
+function renderHeader() {
+  const now = new Date();
+  const hd = document.getElementById('headerDate');
+  if (hd) hd.textContent = now.toLocaleDateString('pt-PT', { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase();
+  const dayPt = now.toLocaleDateString('pt-PT', { weekday: 'long' });
+  const bd = document.getElementById('briefingDay');
+  const bdt = document.getElementById('briefingDateTag');
+  const bwt = document.getElementById('briefingWeekTag');
+  if (bd) bd.textContent = dayPt.charAt(0).toUpperCase() + dayPt.slice(1);
+  if (bdt) bdt.textContent = now.toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' });
+  if (bwt) bwt.textContent = getWeekLabel();
+}
+
+// ── PASSWORD LOCK ─────────────────────────────────────────────────────────────
+// Simple plain-text comparison — personal use, no server, no sensitive data
+function getStoredPw() { return localStorage.getItem('g26_pw') || '1979'; }
+
+function unlockApp() {
+  const input = document.getElementById('lockInput');
+  const pw = input.value.trim();
+  const errorEl = document.getElementById('lockError');
+  if (!pw) return;
+
+  if (pw === getStoredPw()) {
+    sessionStorage.setItem('g26_unlocked', '1');
+    document.getElementById('lockScreen').classList.add('hidden');
+    errorEl.textContent = '';
+    renderHeader();
+  } else {
+    input.value = '';
+    input.classList.add('shake');
+    errorEl.textContent = 'Password incorrecta.';
+    setTimeout(() => { input.classList.remove('shake'); input.focus(); }, 400);
+  }
+}
+
+function changePassword() {
+  const current = document.getElementById('pwCurrent').value;
+  const newPw = document.getElementById('pwNew').value;
+  const confirm = document.getElementById('pwConfirm').value;
+  const status = document.getElementById('pwStatus');
+
+  if (current !== getStoredPw()) {
+    status.innerHTML = '<span class="status-dot status-err"></span>Password actual incorrecta.'; return;
+  }
+  if (newPw.length < 4) {
+    status.innerHTML = '<span class="status-dot status-err"></span>Mínimo 4 caracteres.'; return;
+  }
+  if (newPw !== confirm) {
+    status.innerHTML = '<span class="status-dot status-err"></span>Passwords não coincidem.'; return;
+  }
+  localStorage.setItem('g26_pw', newPw);
+  document.getElementById('pwCurrent').value = '';
+  document.getElementById('pwNew').value = '';
+  document.getElementById('pwConfirm').value = '';
+  status.innerHTML = '<span class="status-dot status-ok"></span>Password alterada com sucesso.';
+}
+
+function showChangePassword() {
+  showTab('config', document.querySelectorAll('.nav-btn')[5]);
+  document.getElementById('lockScreen').classList.add('hidden');
+  sessionStorage.setItem('g26_unlocked', '1');
+}
+
+function checkAndShowLock() {
+  if (sessionStorage.getItem('g26_unlocked') === '1') {
+    document.getElementById('lockScreen').classList.add('hidden');
+  } else {
+    document.getElementById('lockScreen').classList.remove('hidden');
+    setTimeout(() => document.getElementById('lockInput').focus(), 100);
+  }
+}
+
+// ── SETTINGS ──────────────────────────────────────────────────────────────────
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) return;
+  localStorage.setItem('g26_apikey', key);
+  document.getElementById('apiStatus').innerHTML = `<span class="status-dot status-ok"></span>Chave guardada com sucesso`;
+}
+
+
+// ── GITHUB GIST SYNC ─────────────────────────────────────────────────────────
+function getGithubToken() { return localStorage.getItem('g26_ghtoken') || ''; }
+function getGistId() { return localStorage.getItem('g26_gistid') || ''; }
+
+function setSyncStatus(msg, ok = null) {
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  const dot = ok === true ? '<span class="status-dot status-ok"></span>'
+            : ok === false ? '<span class="status-dot status-err"></span>' : '';
+  el.innerHTML = dot + msg;
+}
+
+function saveGithubToken() {
+  const token = document.getElementById('githubToken').value.trim();
+  if (!token) return;
+  localStorage.setItem('g26_ghtoken', token);
+  setSyncStatus('Token guardado.', true);
+}
+
+function getLocalData() {
+  return {
+    decisions: store.get('decisions', []),
+    kpis: store.get('kpis', []),
+    reviews: store.get('reviews', []),
+    chatHistory: store.get('chatHistory', []),
+    updated: new Date().toISOString()
+  };
+}
+
+function applyRemoteData(data) {
+  if (data.decisions) store.set('decisions', data.decisions);
+  if (data.kpis) store.set('kpis', data.kpis);
+  if (data.reviews) store.set('reviews', data.reviews);
+  if (data.chatHistory) {
+    store.set('chatHistory', data.chatHistory);
+    chatHistory = data.chatHistory;
+  }
+  renderDecisions();
+  renderReviewHistory();
+  restoreChatHistory();
+}
+
+async function createGist() {
+  const token = getGithubToken();
+  if (!token) { setSyncStatus('Insere o GitHub Token primeiro.', false); return; }
+  setSyncStatus('A criar Gist...');
+  try {
+    const r = await fetch('https://api.github.com/gists', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        description: '2026 Painel de Crescimento — dados privados',
+        public: false,
+        files: { '2026-data.json': { content: JSON.stringify(getLocalData(), null, 2) } }
+      })
+    });
+    const data = await r.json();
+    if (data.id) {
+      localStorage.setItem('g26_gistid', data.id);
+      document.getElementById('gistId').value = data.id;
+      setSyncStatus('Gist criado e dados enviados: ' + data.id, true);
+    } else {
+      setSyncStatus('Erro: ' + (data.message || JSON.stringify(data)), false);
+    }
+  } catch(e) { setSyncStatus('Erro de rede: ' + e.message, false); }
+}
+
+async function syncToGist() {
+  const token = getGithubToken();
+  const gistId = getGistId();
+  if (!token || !gistId) { setSyncStatus('Configura o token e cria um Gist primeiro.', false); return; }
+  setSyncStatus('A enviar dados...');
+  try {
+    const r = await fetch(`https://api.github.com/gists/${gistId}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        files: { '2026-data.json': { content: JSON.stringify(getLocalData(), null, 2) } }
+      })
+    });
+    const data = await r.json();
+    if (data.id) {
+      setSyncStatus('Dados enviados: ' + new Date().toLocaleTimeString('pt-PT'), true);
+    } else {
+      setSyncStatus('Erro: ' + (data.message || JSON.stringify(data)), false);
+    }
+  } catch(e) { setSyncStatus('Erro de rede: ' + e.message, false); }
+}
+
+async function syncFromGist() {
+  const token = getGithubToken();
+  const gistId = getGistId();
+  if (!token || !gistId) { setSyncStatus('Configura o token e o Gist ID primeiro.', false); return; }
+  setSyncStatus('A receber dados...');
+  try {
+    const r = await fetch(`https://api.github.com/gists/${gistId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const gist = await r.json();
+    const fileContent = gist.files?.['2026-data.json']?.content;
+    if (!fileContent) { setSyncStatus('Ficheiro não encontrado no Gist.', false); return; }
+    const data = JSON.parse(fileContent);
+    applyRemoteData(data);
+    setSyncStatus('Dados recebidos de ' + (data.updated ? new Date(data.updated).toLocaleString('pt-PT') : 'data desconhecida'), true);
+  } catch(e) { setSyncStatus('Erro: ' + e.message, false); }
+}
+
+// Auto-sync on save: wrap store.set to push to Gist after key writes
+const _origStoreSet = store.set.bind(store);
+store.set = function(key, val) {
+  _origStoreSet(key, val);
+  // Debounced auto-push to Gist after any data change
+  clearTimeout(store._syncTimer);
+  store._syncTimer = setTimeout(() => {
+    if (getGithubToken() && getGistId()) syncToGist();
+  }, 3000); // wait 3s after last write before pushing
+};
+
+function saveConfig() {
+  const anchor = document.getElementById('anchorProject').value.trim();
+  const model = document.getElementById('geminiModel').value;
+  if (anchor) localStorage.setItem('g26_anchor', anchor);
+  if (model) localStorage.setItem('g26_model', model);
+  alert('Configuração guardada.');
+}
+
+function loadConfigUI() {
+  const keyInput = document.getElementById('apiKeyInput');
+  const key = getApiKey();
+  if (key) keyInput.value = key;
+  document.getElementById('anchorProject').value = getAnchor();
+  document.getElementById('geminiModel').value = getModel();
+  document.getElementById('apiStatus').innerHTML = key
+    ? `<span class="status-dot status-ok"></span>Chave configurada`
+    : `<span class="status-dot status-err"></span>Sem chave configurada`;
+  // Load GitHub sync credentials
+  const ghToken = getGithubToken();
+  const gistId = getGistId();
+  if (ghToken) document.getElementById('githubToken').value = ghToken;
+  if (gistId) document.getElementById('gistId').value = gistId;
+  if (ghToken && gistId) {
+    setSyncStatus('Sincronização configurada', true);
+  }
+  // Load Drive credentials
+  var gdriveCid = getGdriveClientId();
+  var gdriveKey = getGdriveApiKey();
+  var cidEl = document.getElementById('gdriveClientId');
+  var keyEl = document.getElementById('gdriveApiKey');
+  var statusEl = document.getElementById('gdriveStatus');
+  if (cidEl && gdriveCid) cidEl.value = gdriveCid;
+  if (keyEl && gdriveKey) keyEl.value = gdriveKey;
+  if (statusEl && gdriveCid && gdriveKey) {
+    statusEl.innerHTML = '<span class="status-dot status-ok"></span>Drive configurado';
+    loadGooglePickerApi();
+  }
+}
+
+function clearData(type) {
+  const msgs = { decisions: 'decisões', kpis: 'dados KPI', reviews: 'revisões', all: 'todos os dados' };
+  if (!confirm(`Tens a certeza que queres apagar ${msgs[type]}?`)) return;
+  if (type === 'all') { localStorage.clear(); location.reload(); return; }
+  if (type === 'decisions') store.set('decisions', []);
+  if (type === 'kpis') store.set('kpis', []);
+  if (type === 'reviews') store.set('reviews', []);
+  renderDecisions(); renderKPIChart(); renderReviewHistory();
+  alert('Apagado com sucesso.');
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function saveModalApiKey() {
+  const key = document.getElementById('modalApiKey').value.trim();
+  if (key) localStorage.setItem('g26_apikey', key);
+  closeModal();
+}
+function closeModal() {
+  document.getElementById('apiModal').style.display = 'none';
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+function init() {
+  try {
+  // Migrate unstable preview model to stable default
+  const savedModel = localStorage.getItem('g26_model');
+  if (!savedModel || savedModel === 'gemini-2.0-flash' || savedModel === 'gemini-1.5-flash') {
+    localStorage.setItem('g26_model', 'gemini-3-flash-preview');
+  }
+  // Header date + briefing tags
+  renderHeader();
+
+  // Init modules
+  initStars();
+  renderTemplates();
+  renderDecisions();
+  renderProjects();
+  renderReviewHistory();
+
+  // Auto-sync from Gist if configured (silently)
+  if (getGithubToken() && getGistId()) {
+    syncFromGist().catch(() => {});
+  }
+
+  // Load today's briefing if exists
+  loadTodayBriefing();
+
+  // Restore chat history into UI
+  restoreChatHistory();
+
+  // Show lock screen if needed
+  checkAndShowLock();
+
+  // Show API modal if no key (only if unlocked)
+  if (sessionStorage.getItem('g26_unlocked') === '1') {
+    if (!getApiKey()) {
+      document.getElementById('apiModal').style.display = 'flex';
+    } else {
+      closeModal();
+    }
+  }
+  } catch(e) { console.error('Init error:', e); }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
