@@ -31,6 +31,20 @@
   html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 13px; line-height: 1.6; }
   ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: var(--bg2); } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
+  /* ── AI DISCLOSURE BANNER ── */
+  .ai-banner {
+    background: #0a1018; border-bottom: 1px solid rgba(26,158,143,.2);
+    padding: .4rem clamp(1rem, 4vw, 2rem);
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  }
+  .ai-banner-text { font-size: .65rem; color: var(--dim); letter-spacing: .06em; line-height: 1.5; }
+  .ai-banner-text strong { color: rgba(26,158,143,.85); font-weight: 500; }
+  .ai-banner-close {
+    background: none; border: none; color: var(--dim); cursor: pointer;
+    font-size: .9rem; line-height: 1; flex-shrink: 0; transition: color .2s;
+  }
+  .ai-banner-close:hover { color: var(--teal); }
+
   /* ── LAYOUT ── */
   .shell { display: grid; grid-template-rows: auto 1fr auto; min-height: 100vh; }
   .header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
@@ -376,6 +390,13 @@
 </style>
 </head>
 <body>
+
+<!-- ── AI DISCLOSURE BANNER ── -->
+<div class="ai-banner" id="aiBanner">
+  <span class="ai-banner-text"><strong>Aviso AI Act (UE) 2024/1689 · Art. 50</strong> — Esta aplicação utiliza inteligência artificial generativa (Gemini API). As respostas são geradas automaticamente e podem conter imprecisões. Não substituem aconselhamento profissional.</span>
+  <button class="ai-banner-close" onclick="this.parentElement.style.display='none'" aria-label="Fechar aviso">✕</button>
+</div>
+
 <div class="shell">
 
   <!-- HEADER -->
