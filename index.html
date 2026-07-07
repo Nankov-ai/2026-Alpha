@@ -839,8 +839,8 @@
     <div class="lock-sub">SISTEMA DE GESTÃO DE PROJETOS</div>
     <input class="lock-input" type="password" id="lockInput" placeholder="••••••••"
       onkeydown="if(event.key==='Enter') unlockApp()"
-      autocomplete="current-password">
-    <button class="lock-btn" onclick="unlockApp()">Entrar</button>
+      autocomplete="current-password" style="display:none">
+    <button class="lock-btn" onclick="unlockApp()">Entrar sem pass</button>
     <div class="lock-error" id="lockError"></div>
     <div class="lock-hint" id="lockHint"></div>
     <div class="lock-change" onclick="showChangePassword()" id="lockChangeLink" style="display:none">Alterar password</div>
@@ -2267,22 +2267,9 @@ function renderHeader() {
 function getStoredPw() { return localStorage.getItem('g26_pw') || '1979'; }
 
 function unlockApp() {
-  const input = document.getElementById('lockInput');
-  const pw = input.value.trim();
-  const errorEl = document.getElementById('lockError');
-  if (!pw) return;
-
-  if (pw === getStoredPw()) {
-    sessionStorage.setItem('g26_unlocked', '1');
-    document.getElementById('lockScreen').classList.add('hidden');
-    errorEl.textContent = '';
-    renderHeader();
-  } else {
-    input.value = '';
-    input.classList.add('shake');
-    errorEl.textContent = 'Password incorrecta.';
-    setTimeout(() => { input.classList.remove('shake'); input.focus(); }, 400);
-  }
+  sessionStorage.setItem('g26_unlocked', '1');
+  document.getElementById('lockScreen').classList.add('hidden');
+  renderHeader();
 }
 
 function changePassword() {
