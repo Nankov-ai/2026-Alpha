@@ -1,5 +1,0 @@
-[2026-07-07T22:29:47.549Z] GET file:///C:/projetos/8.%20Alpha2026/index.html → 200 (1ms, 122819B)
-[2026-07-07T22:29:47.554Z] GET https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap → 200 (112ms, 1352B)
-[2026-07-07T22:29:47.554Z] GET https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js → 200 (46ms, 71600B)
-[2026-07-07T22:29:47.736Z] GET https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbV2o-flEEny0FZhsfKu5WU4xD7OwE.woff2 → 200 (95ms, 40540B)
-[2026-07-07T22:29:47.736Z] GET https://fonts.gstatic.com/s/syne/v24/8vIH7w4qzmVxm2BL9A.woff2 → 200 (93ms, 35159B)
