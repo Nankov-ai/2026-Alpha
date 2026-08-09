@@ -6,6 +6,7 @@ Single-page app (Portuguese, pt_PT) for Fernando Costa ("Nando") to run a person
 ## Architecture
 Everything lives in `index.html`:
 - **`<style>` block** — all CSS, dark theme via CSS custom properties (`--bg`, `--amber`, `--teal`, etc.), tab/nav layout, cards, forms, lock screen, AI disclosure banner.
+- Page layout is a fixed-height flex column (`body { height: 100vh; overflow: hidden }`) with the AI banner as a `flex-shrink: 0` row and `.shell` (header/content/nav grid) taking the remaining space (`flex: 1; min-height: 0`). Only `.main` scrolls internally (`overflow-y: auto`), so the header, banner, and bottom nav stay pinned on screen regardless of banner presence or content length.
 - **`<body>`** — static markup for all tabs (rendered/hidden via `showTab()`), the password lock screen, and the API-key modal.
 - **`<script>` block** — all app logic (vanilla JS, no framework, no bundler).
 
@@ -51,3 +52,4 @@ npx serve .
 - **Lock screen password**: removed from the entry flow — the button now says "Entrar sem pass" and `unlockApp()` no longer validates a password (see Auth section). The old default was `1979`.
 - **Letting the professor test it**: don't embed an API key in `index.html` (it would be exposed if the repo is shared/public). Instead, create a separate, budget-capped Gemini API key at aistudio.google.com/apikey and give it to the professor to paste into the app's API-key modal (`saveApiKey()`, index.html:2326); revoke it after testing.
 - **Cost estimate**: Gemini Flash usage for a short demo (a few briefings/chat messages) costs a small fraction of a euro; a 4€ budget is comfortable headroom. Set a budget alert on the key's Google Cloud project as a safety net.
+- **Nav bar hidden below the fold**: adding the AI banner made the page taller than `100vh` (the old `.shell` used `min-height: 100vh` on top of the banner's height), pushing the bottom nav bar off-screen. Fixed by making `body` a fixed-height flex column and `.shell` a flex child (`flex: 1; min-height: 0`) — see Architecture section.
